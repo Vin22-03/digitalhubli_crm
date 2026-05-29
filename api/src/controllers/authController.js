@@ -1,0 +1,301 @@
+import bcrypt from "bcryptjs";
+import { sendSignupReceivedEmail } from "../config/email.js";
+import jwt from "jsonwebtoken";
+import { db } from "../config/db.js";
+
+const normalizeUser = (user) => ({
+  ...user,
+  isActive: Boolean(user.isActive),
+  mustChangePassword: Boolean(user.mustChangePassword),
+});
+
+/* ─────────────────────────────────────────
+   ADVISOR SELF-SIGNUP
+   Creates account with isActive = 0 (inactive until payment)
+───────────────────────────────────────── */
+export const registerAdvisor = async (req, res) => {
+  const connection = await db.getConnection();
+  try {
+    const { name, email, phone, password, companyIds } = req.body;
+
+    // --- basic validation ---
+    if (!name?.trim())     return res.status(400).json({ message: "Name is required." });
+    if (!email?.trim())    return res.status(400).json({ message: "Email is required." });
+    if (!phone?.trim())    return res.status(400).json({ message: "Mobile number is required." });
+    if (!password)         return res.status(400).json({ message: "Password is required." });
+    if (password.length < 6) return res.status(400).json({ message: "Password must be at least 6 characters." });
+    if (!Array.isArray(companyIds) || companyIds.length === 0)
+      return res.status(400).json({ message: "Please select at least one company." });
+
+    // --- check duplicates ---
+    const [existingPhone] = await db.query(
+      "SELECT id FROM `User` WHERE phone = ? LIMIT 1",
+      [phone.trim()]
+    );
+    if (existingPhone.length > 0)
+      return res.status(400).json({ message: "Mobile number is already registered." });
+
+    const [existingEmail] = await db.query(
+      "SELECT id FROM `User` WHERE email = ? LIMIT 1",
+      [email.trim().toLowerCase()]
+    );
+    if (existingEmail.length > 0)
+      return res.status(400).json({ message: "Email is already registered." });
+
+    // --- validate companies exist ---
+    const [validCompanies] = await db.query(
+      `SELECT id FROM \`Company\` WHERE id IN (?) AND isActive = 1`,
+      [companyIds]
+    );
+    if (validCompanies.length !== companyIds.length)
+      return res.status(400).json({ message: "One or more selected companies are invalid." });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await connection.beginTransaction();
+
+    // isActive = 0 → inactive until payment
+    const [result] = await connection.query(
+      `INSERT INTO \`User\`
+       (name, email, phone, password, role, isActive, mustChangePassword, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, 'ADVISOR', 0, 0, NOW(), NOW())`,
+      [
+        name.trim(),
+        email.trim().toLowerCase(),
+        phone.trim(),
+        hashedPassword,
+      ]
+    );
+
+    const newUserId = result.insertId;
+
+    // link advisor to chosen companies
+    const companyInserts = companyIds.map((cId) => [newUserId, Number(cId)]);
+    await connection.query(
+      `INSERT INTO AdvisorCompany (advisorId, companyId, createdAt) VALUES ?`,
+      [companyInserts.map(([a, c]) => [a, c, new Date()])]
+    );
+
+    await connection.commit();
+
+    // Create pending subscription record
+    await db.query(
+      `INSERT IGNORE INTO \`Subscription\` (advisorId, planId, status, createdAt, updatedAt)
+       VALUES (?, 1, 'PENDING', NOW(), NOW())`,
+      [newUserId]
+    );
+
+    // Send signup received email (non-blocking)
+    if (email) {
+      sendSignupReceivedEmail({
+        to:   email.trim().toLowerCase(),
+        name: name.trim(),
+      }).catch((e) => console.error("Signup email failed:", e));
+    }
+
+    return res.status(201).json({
+      message: "Account created. Please complete payment to activate your account.",
+      userId: newUserId,
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error("registerAdvisor error:", error);
+    return res.status(500).json({ message: "Server error." });
+  } finally {
+    connection.release();
+  }
+};
+
+/* ─────────────────────────────────────────
+   LOGIN  (email OR mobile + password)
+───────────────────────────────────────── */
+export const login = async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+
+    if (!identifier || !password) {
+      return res.status(400).json({
+        message: "Email/mobile and password are required.",
+      });
+    }
+
+    const trimmed = identifier.trim();
+
+    // decide if it looks like an email or a phone
+    const isEmail = trimmed.includes("@");
+
+    const [rows] = await db.query(
+      `SELECT id, name, email, phone, password, role, isActive, mustChangePassword, brandName
+       FROM \`User\`
+       WHERE ${isEmail ? "email = ?" : "phone = ?"}
+       LIMIT 1`,
+      [isEmail ? trimmed.toLowerCase() : trimmed]
+    );
+
+    if (rows.length === 0) {
+      return res.status(400).json({ message: "Invalid credentials." });
+    }
+
+    const user = normalizeUser(rows[0]);
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        message: "Your account is not active. Please complete payment to activate.",
+        pendingPayment: true,
+      });
+    }
+
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    if (!isPasswordMatch) {
+      return res.status(400).json({ message: "Invalid credentials." });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, role: user.role, phone: user.phone },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return res.status(200).json({
+      message: "Login successful.",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        brandName: user.brandName,
+        mustChangePassword: user.mustChangePassword,
+      },
+    });
+  } catch (error) {
+    console.error("login error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+/* ─────────────────────────────────────────
+   FORGOT PASSWORD REQUEST
+───────────────────────────────────────── */
+export const forgotPasswordRequest = async (req, res) => {
+  try {
+    const { identifier } = req.body;
+
+    if (!identifier) {
+      return res.status(400).json({ message: "Email or mobile is required." });
+    }
+
+    const trimmed = identifier.trim();
+    const isEmail = trimmed.includes("@");
+
+    const [userRows] = await db.query(
+      `SELECT id, phone FROM \`User\` WHERE ${isEmail ? "email = ?" : "phone = ?"} LIMIT 1`,
+      [isEmail ? trimmed.toLowerCase() : trimmed]
+    );
+
+    // always return same message (don't leak whether account exists)
+    if (userRows.length === 0) {
+      return res.status(200).json({
+        message: "If the account exists, the password reset request has been submitted.",
+      });
+    }
+
+    const user = userRows[0];
+
+    const [pendingRows] = await db.query(
+      `SELECT id FROM PasswordResetRequest WHERE userId = ? AND status = 'PENDING' LIMIT 1`,
+      [user.id]
+    );
+
+    if (pendingRows.length > 0) {
+      return res.status(200).json({
+        message: "If the account exists, the password reset request has been submitted.",
+      });
+    }
+
+    await db.query(
+      `INSERT INTO PasswordResetRequest (userId, requestedBy, status, createdAt, updatedAt)
+       VALUES (?, ?, 'PENDING', NOW(), NOW())`,
+      [user.id, user.phone]
+    );
+
+    return res.status(201).json({
+      message: "Password reset request sent to admin successfully.",
+    });
+  } catch (error) {
+    console.error("forgotPasswordRequest error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+/* ─────────────────────────────────────────
+   GET ME  (current logged-in user)
+───────────────────────────────────────── */
+export const getMe = async (req, res) => {
+  try {
+    const [userRows] = await db.query(
+      `SELECT id, name, email, phone, brandName, role, isActive, mustChangePassword,
+              bio, dob, photoUrl, advisorUrl, officeAddress, advisorRole, brandLogoUrl, createdAt
+       FROM \`User\`
+       WHERE id = ?
+       LIMIT 1`,
+      [req.user.id]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const user = normalizeUser(userRows[0]);
+
+    const [companyRows] = await db.query(
+      `SELECT c.id, c.code, c.name
+       FROM AdvisorCompany ac
+       JOIN \`Company\` c ON c.id = ac.companyId
+       WHERE ac.advisorId = ?`,
+      [user.id]
+    );
+
+    return res.status(200).json({
+      message: "Current user fetched successfully.",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        brandName: user.brandName,
+        role: user.role,
+        isActive: user.isActive,
+        mustChangePassword: user.mustChangePassword,
+        bio: user.bio,
+        dob: user.dob,
+        photoUrl: user.photoUrl,
+        advisorUrl: user.advisorUrl,
+        officeAddress: user.officeAddress,
+        advisorRole: user.advisorRole,
+        brandLogoUrl: user.brandLogoUrl,
+        createdAt: user.createdAt,
+        companies: companyRows,
+      },
+    });
+  } catch (error) {
+    console.error("getMe error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+/* ─────────────────────────────────────────
+   GET COMPANIES (public - for signup form)
+───────────────────────────────────────── */
+export const getPublicCompanies = async (req, res) => {
+  try {
+    const [companies] = await db.query(
+      `SELECT id, code, name FROM \`Company\` WHERE isActive = 1 ORDER BY name ASC`
+    );
+    return res.status(200).json({ companies });
+  } catch (error) {
+    console.error("getPublicCompanies error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
