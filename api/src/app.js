@@ -41,7 +41,7 @@ uploadFolders.forEach((folder) => {
     fs.mkdirSync(folder, { recursive: true });
   }
 });
-const appPath = path.join(__dirname, "../../app/dist");
+const appPath = path.join(__dirname, "../public");
 
 app.use(cors());
 app.use(express.json());
