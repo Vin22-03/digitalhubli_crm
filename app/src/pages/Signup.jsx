@@ -3,15 +3,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { BRAND } from "../config/branding";
 import API from "../api/axios";
-import {
-  ShieldCheck, User, Mail, Phone, Lock, Eye, EyeOff,
-  Building2, ArrowRight, CheckCircle2,
-} from "lucide-react";
 import logo from "../assets/logo-ih.png";
 
-function Signup() {
+export default function Signup() {
   const { user } = useAuth();
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
+
+  const brandName = BRAND.companyName || "digitalhubli";
+  const tagline = BRAND.tagline || "Smart CRM for Insurance Growth";
 
   const [companies, setCompanies] = useState([]);
   const [loadingCo, setLoadingCo] = useState(true);
@@ -20,12 +19,12 @@ function Signup() {
     name: "", email: "", phone: "", password: "", companyIds: [],
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading]           = useState(false);
-  const [errorMsg, setErrorMsg]         = useState("");
-  const [success, setSuccess]           = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (user?.role === "ADMIN")    navigate("/admin");
+    if (user?.role === "ADMIN") navigate("/admin");
     else if (user?.role === "ADVISOR") navigate("/advisor");
   }, [user, navigate]);
 
@@ -50,20 +49,20 @@ function Signup() {
 
   const handleSubmit = async () => {
     setErrorMsg("");
-    if (!form.name.trim())    return setErrorMsg("Full name is required.");
-    if (!form.email.trim())   return setErrorMsg("Email is required.");
-    if (!form.phone.trim())   return setErrorMsg("Mobile number is required.");
-    if (!form.password)       return setErrorMsg("Password is required.");
+    if (!form.name.trim()) return setErrorMsg("Full name is required.");
+    if (!form.email.trim()) return setErrorMsg("Email is required.");
+    if (!form.phone.trim()) return setErrorMsg("Mobile number is required.");
+    if (!form.password) return setErrorMsg("Password is required.");
     if (form.password.length < 6) return setErrorMsg("Password must be at least 6 characters.");
     if (form.companyIds.length === 0) return setErrorMsg("Please select at least one insurance company.");
 
     try {
       setLoading(true);
       await API.post("/auth/signup", {
-        name:       form.name.trim(),
-        email:      form.email.trim().toLowerCase(),
-        phone:      form.phone.trim(),
-        password:   form.password,
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim(),
+        password: form.password,
         companyIds: form.companyIds,
       });
       setSuccess(true);
@@ -74,178 +73,574 @@ function Signup() {
     }
   };
 
-  // ── Success screen ────────────────────────────────────────
-  if (success) {
-    return (
-      <div className="relative flex h-[100svh] items-center justify-center overflow-hidden bg-[#031b61] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(37,99,235,0.30),_transparent_60%)]" />
-        <div className="relative z-10 mx-auto max-w-md px-6 text-center">
-          <div className="mb-6 flex justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/20 ring-2 ring-emerald-400/40">
-              <CheckCircle2 size={40} className="text-emerald-400" />
+  return (
+    <>
+      <style>{`
+        /* ABSOLUTE ZERO SCROLL LOCK */
+        html, body, #root {
+          margin: 0;
+          width: 100%;
+          height: 100%;
+          overflow: hidden !important; 
+          overscroll-behavior: none;
+        }
+
+        * {
+          box-sizing: border-box;
+        }
+
+        .signup-screen {
+          height: 100svh;
+          width: 100%;
+          overflow: hidden;
+          font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          color: #0f172a;
+          position: relative;
+          background:
+            radial-gradient(circle at 12% 18%, rgba(29, 78, 216, 0.35), transparent 26%),
+            radial-gradient(circle at 82% 16%, rgba(14, 165, 233, 0.32), transparent 24%),
+            radial-gradient(circle at 76% 82%, rgba(6, 182, 212, 0.28), transparent 28%),
+            linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 42%, #eef8ff 100%);
+          display: grid;
+          grid-template-columns: 1.08fr 0.92fr;
+        }
+
+        .mesh {
+          position: absolute;
+          inset: 0;
+          background-image:
+            linear-gradient(rgba(14, 165, 233, 0.12) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(14, 165, 233, 0.12) 1px, transparent 1px);
+          background-size: 40px 40px;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .orb {
+          position: absolute;
+          border-radius: 999px;
+          filter: blur(24px);
+          opacity: 0.85;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .orb.one {
+          width: 380px; height: 380px;
+          left: -50px; top: -50px;
+          background: rgba(37, 99, 235, 0.25);
+        }
+
+        .orb.two {
+          width: 440px; height: 440px;
+          right: -100px; bottom: -100px;
+          background: rgba(14, 165, 233, 0.25);
+        }
+
+        .left {
+          position: relative;
+          z-index: 1;
+          height: 100svh;
+          padding: clamp(30px, 4vw, 62px);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          background:
+            linear-gradient(135deg, rgba(3, 58, 142, 0.98), rgba(2, 132, 199, 0.92)),
+            radial-gradient(circle at 80% 30%, rgba(255,255,255,0.22), transparent 28%);
+          color: white;
+          overflow: hidden;
+        }
+
+        /* Group brand and hero to keep them aligned to the top */
+        .left-content {
+          display: flex;
+          flex-direction: column;
+          gap: 40px;
+          margin-top: 2vh;
+        }
+
+        .brand {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
+        .brand-logo {
+          background: #ffffff;
+          padding: 16px 28px;
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 1);
+          min-width: 140px;
+        }
+
+        .brand-logo img {
+          height: 70px; 
+          width: auto;
+          max-width: 250px;
+          object-fit: contain;
+        }
+
+        .brand-name {
+          font-size: clamp(32px, 3vw, 44px);
+          font-weight: 950;
+          letter-spacing: -0.05em;
+          line-height: 0.9;
+        }
+
+        .brand-tag {
+          margin-top: 8px;
+          font-size: 15px;
+          color: #b8efff;
+          font-weight: 700;
+        }
+
+        .hero h1 {
+          margin: 0;
+          font-size: clamp(42px, 5vw, 68px);
+          line-height: 1;
+          letter-spacing: -0.05em;
+          font-weight: 950;
+        }
+
+        .hero h1 span { color: #b8efff; }
+
+        .hero p {
+          margin: 20px 0 28px;
+          max-width: 520px;
+          color: rgba(255,255,255,0.85);
+          font-size: 17px;
+          line-height: 1.6;
+        }
+
+        .left-footer {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          gap: 16px;
+          color: rgba(255,255,255,0.72);
+          font-size: 13px;
+          font-weight: 600;
+        }
+
+        .right {
+          position: relative;
+          z-index: 10;
+          height: 100svh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: clamp(16px, 3vw, 40px);
+        }
+
+        .form-wrap {
+          width: min(560px, 100%);
+          position: relative;
+          z-index: 20;
+        }
+
+        .mobile-brand {
+          display: none;
+        }
+
+        .panel {
+          width: 100%;
+          padding: 32px 40px;
+          border-radius: 32px;
+          background: rgba(255,255,255,0.92);
+          border: 1px solid rgba(255,255,255,1);
+          box-shadow: 0 40px 100px rgba(15,23,42,0.15), inset 0 1px 0 rgba(255,255,255,1);
+          backdrop-filter: blur(30px);
+        }
+
+        .eyebrow {
+          color: #0284c7;
+          font-size: 12px;
+          font-weight: 900;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+        }
+
+        .panel h2 {
+          margin: 8px 0 6px;
+          font-size: 36px;
+          line-height: 1.1;
+          letter-spacing: -0.05em;
+          font-weight: 900;
+          color: #0f172a;
+        }
+
+        .sub {
+          margin: 0 0 24px;
+          color: #475569;
+          font-size: 15px;
+        }
+
+        /* FIXED 2-COLUMN INPUT GRID */
+        .input-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px 16px;
+          margin-bottom: 16px;
+          width: 100%;
+        }
+
+        .field {
+          width: 100%;
+          min-width: 0; /* CRITICAL FIX: prevents grid blowout */
+        }
+
+        .field label {
+          display: block;
+          margin-bottom: 6px;
+          font-size: 12px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: #334155;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .input {
+          height: 52px;
+          width: 100%; /* CRITICAL FIX: forces input to stay inside field */
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 0 14px;
+          border-radius: 16px;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+          transition: all 0.2s ease;
+          min-width: 0; /* Ensures flex container shrinks */
+        }
+
+        .input:focus-within {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+
+        .input span { font-size: 16px; opacity: 0.7; flex-shrink: 0; }
+
+        .input input {
+          flex: 1; 
+          min-width: 0; /* CRITICAL FIX: prevents text from pushing width */
+          height: 100%; 
+          border: 0; 
+          outline: 0;
+          background: transparent; 
+          color: #0f172a; 
+          font-size: 15px; 
+          font-weight: 500;
+        }
+        .input input::placeholder { color: #94a3b8; font-weight: 400; }
+
+        .eye {
+          border: 0; background: transparent; cursor: pointer;
+          font-size: 16px; opacity: 0.6; transition: 0.2s;
+          flex-shrink: 0;
+        }
+
+        /* INTERNALLY SCROLLABLE COMPANY LIST */
+        .companies-section {
+          margin-bottom: 20px;
+        }
+        
+        .companies-section label {
+          display: flex; align-items: center; gap: 6px;
+          font-size: 12px; font-weight: 800; text-transform: uppercase;
+          color: #334155; margin-bottom: 8px;
+        }
+
+        .companies-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          max-height: 100px;
+          overflow-y: auto;
+          padding-right: 4px;
+        }
+        
+        .companies-grid::-webkit-scrollbar { width: 4px; }
+        .companies-grid::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .companies-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        .company-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background: #f8fafc;
+          font-size: 13px;
+          font-weight: 600;
+          color: #475569;
+          cursor: pointer;
+          transition: 0.2s;
+        }
+
+        .company-btn:hover { border-color: #cbd5e1; background: #ffffff; }
+
+        .company-btn.active {
+          background: #eff6ff;
+          border-color: #3b82f6;
+          color: #1d4ed8;
+          box-shadow: 0 0 0 1px #3b82f6;
+        }
+
+        .check-box {
+          width: 14px; height: 14px; border-radius: 4px;
+          border: 2px solid #cbd5e1;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+        .company-btn.active .check-box {
+          background: #3b82f6; border-color: #3b82f6;
+        }
+
+        .error {
+          margin-bottom: 12px;
+          padding: 10px 14px;
+          border-radius: 12px;
+          background: #fff1f2;
+          border: 1px solid #fecdd3;
+          color: #be123c;
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        .login-btn {
+          width: 100%;
+          height: 56px;
+          border: 0;
+          border-radius: 18px;
+          cursor: pointer;
+          color: white;
+          font-weight: 800;
+          font-size: 16px;
+          background: linear-gradient(135deg, #0ea5e9, #2563eb);
+          box-shadow: 0 10px 25px rgba(37,99,235,0.25);
+          transition: all 0.2s ease;
+        }
+
+        .login-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 15px 35px rgba(37,99,235,0.35);
+        }
+        .login-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+        .footer-link {
+          margin-top: 16px;
+          text-align: center;
+          font-size: 14px;
+          color: #64748b;
+          font-weight: 500;
+        }
+        .footer-link a { color: #2563eb; font-weight: 800; text-decoration: none; }
+
+        /* SUCCESS SCREEN MODAL */
+        .success-wrap {
+          display: flex; flex-direction: column; align-items: center; text-align: center;
+        }
+        .success-icon {
+          width: 72px; height: 72px; border-radius: 50%;
+          background: #ecfdf5; border: 4px solid #d1fae5;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 32px; margin-bottom: 20px;
+        }
+        .success-wrap h2 { margin: 0 0 12px; font-size: 32px; font-weight: 900; color: #0f172a; }
+        .success-wrap p { color: #475569; font-size: 16px; line-height: 1.5; margin: 0 0 20px; }
+        .success-box {
+          background: #fffbeb; border: 1px solid #fde68a; padding: 16px;
+          border-radius: 16px; color: #92400e; font-size: 14px; font-weight: 500;
+          margin-bottom: 24px; width: 100%;
+        }
+
+        /* --- MOBILE SAAS OPTIMIZATION --- */
+        @media (max-width: 900px) {
+          .signup-screen {
+            grid-template-columns: 1fr;
+            background: linear-gradient(135deg, #f0f7ff 0%, #dbeafe 100%);
+          }
+          .left { display: none; }
+          .right { padding: 12px; }
+
+          .mobile-brand {
+            display: flex; justify-content: center; width: 100%;
+            margin-bottom: 16px;
+          }
+          .mobile-brand img {
+            background: #ffffff; padding: 12px 24px; border-radius: 20px;
+            height: 60px;
+            box-shadow: 0 10px 30px rgba(37,99,235,0.1);
+          }
+
+          .panel { padding: 24px; border-radius: 28px; }
+          .panel h2 { font-size: 28px; text-align: center; margin-bottom: 4px; }
+          .eyebrow, .sub { text-align: center; }
+          .sub { margin-bottom: 16px; font-size: 14px; }
+
+          .input-grid { 
+            grid-template-columns: 1fr; 
+            gap: 10px; 
+            margin-bottom: 12px; 
+          }
+          .input { height: 46px; } 
+          
+          .companies-section { margin-bottom: 16px; }
+          .companies-grid { max-height: 90px; } 
+          
+          .login-btn { height: 52px; font-size: 15px; }
+          .footer-link { margin-top: 12px; font-size: 13px; }
+        }
+      `}</style>
+
+      <main className="signup-screen">
+        <div className="mesh" />
+        <div className="orb one" />
+        <div className="orb two" />
+
+        <section className="left">
+          <div className="left-content">
+            <div className="brand">
+              <div className="brand-logo">
+                <img src={logo} alt={brandName} />
+              </div>
+              <div>
+                <div className="brand-name">{brandName}</div>
+                <div className="brand-tag">{tagline}</div>
+              </div>
+            </div>
+
+            <div className="hero">
+              <h1>Join India's top <span>advisors.</span></h1>
+              <p>Create your premium CRM account to manage leads, automate follow-ups, and track your daily selling discipline effortlessly.</p>
             </div>
           </div>
-          <h2 className="text-3xl font-black tracking-tight">Account Created!</h2>
-          <p className="mt-3 leading-7 text-blue-100/70">
-            Your <strong className="text-white">{BRAND.companyName} CRM</strong> account has been created. Complete payment to activate and start using the platform.
-          </p>
-          <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-200 leading-6">
-            Our team will contact you on <strong>{form.phone}</strong> or <strong>{form.email}</strong> with payment details.
+
+          <div className="left-footer">
+            <span>Digital insurance growth system</span>
+            <span>•</span>
+            <span>Powered by {brandName}</span>
           </div>
-          <p className="mt-4 text-xs text-white/40">Powered by {BRAND.companyName} · {BRAND.tagline}</p>
-          <Link to="/" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 font-bold transition hover:brightness-110">
-            Back to Login <ArrowRight size={18} />
-          </Link>
-        </div>
-      </div>
-    );
-  }
+        </section>
 
-  // ── Signup form ───────────────────────────────────────────
-  return (
-    <div className="relative min-h-[100svh] overflow-x-hidden bg-[#031b61] text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_left_top,_rgba(37,99,235,0.34),_transparent_28%),linear-gradient(135deg,_#031b61_0%,_#08245f_30%,_#03113d_72%,_#020617_100%)]" />
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-blue-500/20 blur-3xl" />
-        <div className="absolute bottom-[-80px] right-[-60px] h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
-      </div>
+        <section className="right">
+          <div className="form-wrap">
+            
+            <div className="mobile-brand">
+              <img src={logo} alt={brandName} />
+            </div>
 
-      {/* Top-right brand badge */}
-      <div className="pointer-events-none absolute right-6 top-5 z-20 hidden items-center gap-2 text-xs text-white/60 lg:flex">
-        <ShieldCheck size={14} />
-        <span>{BRAND.companyName} · {BRAND.tagline}</span>
-      </div>
-
-      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[560px] flex-col justify-center px-4 py-8 sm:px-6">
-
-        {/* Logo + brand */}
-        <div className="mb-5 flex flex-col items-center">
-          <div className="flex h-[72px] w-[72px] items-center justify-center rounded-[20px] border border-blue-200/20 bg-white/95 p-2.5 shadow-[0_0_30px_rgba(96,165,250,0.30)]">
-            <img src={logo} alt={BRAND.companyName} className="h-full w-full object-contain" />
-          </div>
-          <h1 className="mt-2.5 text-2xl font-black tracking-tight">{BRAND.companyName}</h1>
-          <p className="text-xs text-blue-100/60">{BRAND.tagline}</p>
-        </div>
-
-        <div className="rounded-[1.55rem] border border-white/14 bg-[linear-gradient(180deg,rgba(18,41,112,0.92),rgba(12,31,88,0.90))] px-5 py-6 shadow-[0_18px_65px_rgba(0,0,0,0.34)] backdrop-blur-2xl sm:px-7 sm:py-7">
-          <h2 className="mb-1 text-2xl font-black tracking-tight">Advisor Sign Up</h2>
-          <p className="mb-5 text-sm text-blue-100/60">
-            Create your account on <span className="font-semibold text-cyan-300">{BRAND.companyName} CRM</span>
-          </p>
-
-          <div className="space-y-3.5">
-            <Field label="Full Name" icon={<User size={17} className="text-white/40" />}>
-              <input type="text" placeholder="Your full name"
-                value={form.name} onChange={set("name")}
-                className="h-full w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35 sm:text-base" />
-            </Field>
-
-            <Field label="Email Address" icon={<Mail size={17} className="text-white/40" />}>
-              <input type="email" placeholder="you@example.com"
-                value={form.email} onChange={set("email")}
-                className="h-full w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35 sm:text-base" />
-            </Field>
-
-            <Field label="Mobile Number" icon={<Phone size={17} className="text-white/40" />}>
-              <input type="text" placeholder="10-digit mobile number"
-                value={form.phone} onChange={set("phone")}
-                className="h-full w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35 sm:text-base" />
-            </Field>
-
-            <Field label="Password" icon={<Lock size={17} className="text-white/40" />}
-              action={
-                <button type="button" onClick={() => setShowPassword((p) => !p)} className="ml-2 text-white/40 hover:text-white/70 transition">
-                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
-              }>
-              <input type={showPassword ? "text" : "password"} placeholder="Min. 6 characters"
-                value={form.password} onChange={set("password")}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                className="h-full w-full bg-transparent text-sm text-white outline-none placeholder:text-white/35 sm:text-base" />
-            </Field>
-
-            {/* Company selection */}
-            <div>
-              <label className="mb-1.5 flex items-center gap-2 text-[13px] font-bold text-white/95 sm:text-sm">
-                <Building2 size={16} className="text-white/50" />
-                Select Your Insurance Companies
-              </label>
-              <p className="mb-2 text-xs text-blue-100/50">
-                Select all companies you work with as an advisor
-              </p>
-              {loadingCo ? (
-                <div className="text-sm text-white/50">Loading...</div>
-              ) : companies.length === 0 ? (
-                <div className="text-sm text-red-300">No companies available. Contact support: {BRAND.supportPhone}</div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {companies.map((c) => {
-                    const selected = form.companyIds.includes(c.id);
-                    return (
-                      <button key={c.id} type="button" onClick={() => toggleCompany(c.id)}
-                        className={`flex items-center gap-2.5 rounded-xl border px-3 py-3 text-left text-sm font-medium transition-all ${
-                          selected
-                            ? "border-cyan-400/60 bg-cyan-500/15 text-cyan-200"
-                            : "border-white/10 bg-white/5 text-white/65 hover:border-white/20 hover:bg-white/10"
-                        }`}>
-                        <div className={`h-4 w-4 flex-shrink-0 rounded border-2 transition-all ${selected ? "border-cyan-400 bg-cyan-400" : "border-white/30"}`}>
-                          {selected && (
-                            <svg viewBox="0 0 12 10" fill="none" className="h-full w-full p-0.5">
-                              <path d="M1 5l3.5 3.5L11 1" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          )}
-                        </div>
-                        {c.name}
-                      </button>
-                    );
-                  })}
+            <div className="panel">
+              {success ? (
+                <div className="success-wrap">
+                  <div className="success-icon">✅</div>
+                  <h2>Account Created!</h2>
+                  <p>Your <strong>{brandName}</strong> account is ready. Complete your payment to activate your workspace.</p>
+                  <div className="success-box">
+                    Our team will contact you on <strong>{form.phone}</strong> or <strong>{form.email}</strong> with next steps.
+                  </div>
+                  <Link to="/" className="login-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+                    Return to Login
+                  </Link>
                 </div>
+              ) : (
+                <>
+                  <div className="eyebrow">New Advisor</div>
+                  <h2>Create account</h2>
+                  <p className="sub">Register to access your dedicated CRM workspace.</p>
+
+                  <div className="input-grid">
+                    <div className="field">
+                      <label>Full Name</label>
+                      <div className="input">
+                        <span>👤</span>
+                        <input type="text" placeholder="Your name" value={form.name} onChange={set("name")} />
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label>Email Address</label>
+                      <div className="input">
+                        <span>✉️</span>
+                        <input type="email" placeholder="you@example.com" value={form.email} onChange={set("email")} />
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label>Mobile Number</label>
+                      <div className="input">
+                        <span>📱</span>
+                        <input type="text" placeholder="10-digit number" value={form.phone} onChange={set("phone")} />
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label>Password</label>
+                      <div className="input">
+                        <span>🔒</span>
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="Min. 6 characters" 
+                          value={form.password} 
+                          onChange={set("password")} 
+                          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                        />
+                        <button className="eye" type="button" onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? "🙈" : "👁️"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="companies-section">
+                    <label>🏢 Select Insurance Companies</label>
+                    {loadingCo ? (
+                      <div style={{ fontSize: '13px', color: '#64748b' }}>Loading...</div>
+                    ) : (
+                      <div className="companies-grid">
+                        {companies.map((c) => {
+                          const selected = form.companyIds.includes(c.id);
+                          return (
+                            <button 
+                              key={c.id} 
+                              type="button" 
+                              onClick={() => toggleCompany(c.id)}
+                              className={`company-btn ${selected ? 'active' : ''}`}
+                            >
+                              <div className="check-box">
+                                {selected && <span style={{ color: 'white', fontSize: '10px' }}>✓</span>}
+                              </div>
+                              {c.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {errorMsg && <div className="error">{errorMsg}</div>}
+
+                  <button className="login-btn" onClick={handleSubmit} disabled={loading}>
+                    {loading ? "Creating..." : "Create My Account →"}
+                  </button>
+
+                  <div className="footer-link">
+                    Already have an account? <Link to="/">Login here</Link>
+                  </div>
+                </>
               )}
             </div>
-
-            {errorMsg && (
-              <div className="rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
-                {errorMsg}
-              </div>
-            )}
-
-            <button onClick={handleSubmit} disabled={loading}
-              className="group mt-1 flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-sm font-bold shadow-lg transition-all duration-300 hover:scale-[1.01] disabled:opacity-70 sm:h-14 sm:text-base">
-              <span>{loading ? "Creating account..." : "Create My Account"}</span>
-              <ArrowRight className="ml-3 transition-transform duration-300 group-hover:translate-x-1" size={20} />
-            </button>
-
-            {/* Powered by */}
-            <p className="text-center text-[11px] text-white/35">
-              By signing up you agree to use <strong className="text-white/55">{BRAND.companyName} CRM</strong> platform
-            </p>
           </div>
-
-          <div className="mt-4 text-center text-sm text-blue-100/60">
-            Already have an account?{" "}
-            <Link to="/" className="font-semibold text-cyan-400 transition hover:text-cyan-300">Login →</Link>
-          </div>
-        </div>
-
-        <p className="mt-4 text-center text-xs text-white/30">
-          © {new Date().getFullYear()} {BRAND.companyName} · {BRAND.tagline}
-        </p>
-      </div>
-    </div>
+        </section>
+      </main>
+    </>
   );
 }
-
-function Field({ label, icon, action, children }) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-[13px] font-bold text-white/95 sm:text-sm">{label}</label>
-      <div className="flex h-11 items-center rounded-2xl border border-white/12 bg-[#071b54]/90 px-3.5 shadow-inner sm:h-13">
-        {icon && <span className="mr-2.5 flex-shrink-0">{icon}</span>}
-        {children}
-        {action}
-      </div>
-    </div>
-  );
-}
-
-export default Signup;

@@ -4,37 +4,28 @@ import { BRAND } from "../config/branding";
 import { useNavigate, Link } from "react-router-dom";
 import logo from "../assets/logo-ih.png";
 
-/* ─── tiny icon components (no extra deps) ─── */
-const IconMail    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m2 7 10 7 10-7"/></svg>;
-const IconLock    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
-const IconEye     = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
-const IconEyeOff  = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>;
-const IconArrow   = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
-const IconX       = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
-const IconShield  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
-
 export default function Login() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  const brandName = BRAND.companyName;
-  const tagline   = BRAND.tagline;
+  const brandName = BRAND.companyName || "digitalhubli";
+  const tagline = BRAND.tagline || "Smart CRM for Insurance Growth";
 
-  const [identifier, setIdentifier]         = useState("");
-  const [password, setPassword]             = useState("");
-  const [showPwd, setShowPwd]               = useState(false);
-  const [loading, setLoading]               = useState(false);
-  const [errorMsg, setErrorMsg]             = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const [pendingPayment, setPendingPayment] = useState(false);
 
-  const [showForgot, setShowForgot]         = useState(false);
-  const [forgotId, setForgotId]             = useState("");
-  const [forgotLoading, setForgotLoading]   = useState(false);
-  const [forgotSuccess, setForgotSuccess]   = useState("");
-  const [forgotError, setForgotError]       = useState("");
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotId, setForgotId] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState("");
+  const [forgotError, setForgotError] = useState("");
 
   useEffect(() => {
-    if (user?.role === "ADMIN")   navigate("/admin");
+    if (user?.role === "ADMIN") navigate("/admin");
     else if (user?.role === "ADVISOR") navigate("/advisor");
   }, [user, navigate]);
 
@@ -43,669 +34,828 @@ export default function Login() {
       setErrorMsg("Please enter your email / mobile and password.");
       return;
     }
+
     try {
-      setLoading(true); setErrorMsg(""); setPendingPayment(false);
+      setLoading(true);
+      setErrorMsg("");
+      setPendingPayment(false);
+
       const data = await login(identifier.trim(), password);
       if (data?.user?.role === "ADMIN") navigate("/admin");
       else navigate("/advisor");
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || "Login failed.");
+      setErrorMsg(err?.response?.data?.message || "Login failed. Please check your details.");
       setPendingPayment(err?.response?.data?.pendingPayment === true);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgot = async () => {
-    if (!forgotId.trim()) { setForgotError("Please enter your email or mobile."); return; }
+    if (!forgotId.trim()) {
+      setForgotError("Please enter your email or mobile.");
+      return;
+    }
+
     try {
-      setForgotLoading(true); setForgotError(""); setForgotSuccess("");
-      const res  = await fetch("/auth/forgot-password-request", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+      setForgotLoading(true);
+      setForgotError("");
+      setForgotSuccess("");
+
+      const res = await fetch("/auth/forgot-password-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identifier: forgotId.trim() }),
       });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Failed");
-      setForgotSuccess(data?.message || "Request sent to admin.");
+
+      setForgotSuccess(data?.message || "Request sent successfully.");
       setForgotId("");
-    } catch (err) { setForgotError(err.message || "Something went wrong."); }
-    finally { setForgotLoading(false); }
+    } catch (err) {
+      setForgotError(err.message || "Something went wrong.");
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        .dh-root {
-          font-family: 'DM Sans', sans-serif;
-          min-height: 100svh; height: 100svh;
+        html, body, #root {
+          margin: 0;
+          width: 100%;
+          height: 100%;
           overflow: hidden;
-          background: #060818;
-          color: #fff;
-          display: flex;
-          position: relative;
         }
 
-        /* ── animated background ── */
-        .dh-bg {
-          position: absolute; inset: 0; overflow: hidden; z-index: 0;
+        * {
+          box-sizing: border-box;
         }
-        .dh-bg::before {
-          content: '';
-          position: absolute; inset: 0;
+
+        .login-screen {
+          height: 100svh;
+          width: 100%;
+          overflow: hidden;
+          font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          color: #0f172a;
+          position: relative;
           background:
-            radial-gradient(ellipse 80% 60% at 15% 10%, rgba(59,130,246,0.18) 0%, transparent 60%),
-            radial-gradient(ellipse 60% 50% at 85% 80%, rgba(6,182,212,0.12) 0%, transparent 55%),
-            radial-gradient(ellipse 50% 40% at 50% 50%, rgba(99,102,241,0.07) 0%, transparent 60%);
+            radial-gradient(circle at 12% 18%, rgba(29, 78, 216, 0.35), transparent 26%),
+            radial-gradient(circle at 82% 16%, rgba(14, 165, 233, 0.32), transparent 24%),
+            radial-gradient(circle at 76% 82%, rgba(6, 182, 212, 0.28), transparent 28%),
+            linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 42%, #eef8ff 100%);
+          display: grid;
+          grid-template-columns: 1.08fr 0.92fr;
         }
-        .dh-orb {
-          position: absolute; border-radius: 50%;
-          filter: blur(60px); opacity: 0.55;
-          animation: orbFloat 8s ease-in-out infinite;
-        }
-        .dh-orb-1 { width: 340px; height: 340px; background: radial-gradient(circle, rgba(59,130,246,0.35), transparent 70%); top: -80px; left: -80px; animation-delay: 0s; }
-        .dh-orb-2 { width: 280px; height: 280px; background: radial-gradient(circle, rgba(6,182,212,0.25), transparent 70%); bottom: -60px; right: -60px; animation-delay: -3s; }
-        .dh-orb-3 { width: 200px; height: 200px; background: radial-gradient(circle, rgba(139,92,246,0.20), transparent 70%); top: 40%; left: 30%; animation-delay: -5s; }
 
-        /* grid lines */
-        .dh-grid {
-          position: absolute; inset: 0;
+        /* Enhanced Mesh Lines for SaaS Look */
+        .mesh {
+          position: absolute;
+          inset: 0;
           background-image:
-            linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
-          background-size: 48px 48px;
+            linear-gradient(rgba(14, 165, 233, 0.12) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(14, 165, 233, 0.12) 1px, transparent 1px);
+          background-size: 40px 40px;
+          pointer-events: none;
+          z-index: 0;
         }
 
-        @keyframes orbFloat {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33%       { transform: translate(20px, -15px) scale(1.05); }
-          66%       { transform: translate(-10px, 10px) scale(0.96); }
+        .orb {
+          position: absolute;
+          border-radius: 999px;
+          filter: blur(24px);
+          opacity: 0.85;
+          pointer-events: none;
+          z-index: 0;
         }
 
-        /* ── layout ── */
-        .dh-layout {
-          position: relative; z-index: 1;
-          display: flex; width: 100%; height: 100svh;
+        .orb.one {
+          width: 380px;
+          height: 380px;
+          left: -50px;
+          top: -50px;
+          background: rgba(37, 99, 235, 0.25);
         }
 
-        /* ── left hero panel (desktop only) ── */
-        .dh-hero {
-          display: none;
-          flex: 1;
-          flex-direction: column;
-          justify-content: center;
-          padding: 3rem 3rem 3rem 4rem;
-          border-right: 1px solid rgba(255,255,255,0.06);
-          background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 100%);
-          backdrop-filter: blur(2px);
+        .orb.two {
+          width: 440px;
+          height: 440px;
+          right: -100px;
+          bottom: -100px;
+          background: rgba(14, 165, 233, 0.25);
+        }
+
+        .left {
           position: relative;
+          z-index: 1;
+          height: 100svh;
+          padding: clamp(30px, 4vw, 62px);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          background:
+            linear-gradient(135deg, rgba(3, 58, 142, 0.98), rgba(2, 132, 199, 0.92)),
+            radial-gradient(circle at 80% 30%, rgba(255,255,255,0.22), transparent 28%);
+          color: white;
           overflow: hidden;
         }
-        @media (min-width: 1024px) {
-          .dh-hero { display: flex; max-width: 520px; }
-        }
-        @media (min-width: 1280px) {
-          .dh-hero { max-width: 580px; padding: 3rem 4rem 3rem 5rem; }
+
+        .left::before {
+          content: "";
+          position: absolute;
+          width: 600px;
+          height: 600px;
+          border: 1px solid rgba(255,255,255,0.15);
+          border-radius: 50%;
+          right: -220px;
+          top: 80px;
         }
 
-        .dh-hero-badge {
-          display: inline-flex; align-items: center; gap: 8px;
-          background: rgba(59,130,246,0.12);
-          border: 1px solid rgba(59,130,246,0.25);
-          border-radius: 99px;
-          padding: 6px 14px;
-          font-size: 11px; font-weight: 600;
-          color: rgba(147,197,253,0.9);
-          letter-spacing: 0.08em; text-transform: uppercase;
-          margin-bottom: 2rem;
-        }
-        .dh-hero-badge-dot {
-          width: 7px; height: 7px; border-radius: 50%;
-          background: #34d399;
-          box-shadow: 0 0 8px rgba(52,211,153,0.8);
-          animation: pulse 2s ease-in-out infinite;
-        }
-        @keyframes pulse {
-          0%,100% { opacity: 1; transform: scale(1); }
-          50%      { opacity: 0.6; transform: scale(0.85); }
+        .left::after {
+          content: "";
+          position: absolute;
+          width: 380px;
+          height: 380px;
+          border: 1px solid rgba(255,255,255,0.14);
+          border-radius: 50%;
+          right: -90px;
+          top: 190px;
         }
 
-        .dh-logo-wrap {
-          display: inline-flex;
-          background: rgba(255,255,255,0.96);
-          border-radius: 22px;
-          padding: 14px;
-          box-shadow: 0 0 0 1px rgba(255,255,255,0.12), 0 20px 60px rgba(59,130,246,0.22);
-          margin-bottom: 2rem;
-        }
-        .dh-logo-wrap img { width: 72px; height: 72px; object-fit: contain; display: block; border-radius: 12px; }
-
-        .dh-hero-title {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(2.4rem, 3.5vw, 3.2rem);
-          font-weight: 800;
-          line-height: 1.08;
-          letter-spacing: -0.03em;
-          color: #fff;
-          margin-bottom: 1.25rem;
-        }
-        .dh-hero-title span {
-          background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #67e8f9 100%);
-          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-          background-clip: text;
+        .brand {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          gap: 24px;
+          margin-bottom: 50px; /* FIX: Clear gap below the logo */
         }
 
-        .dh-divider {
-          width: 44px; height: 3px; border-radius: 2px;
-          background: linear-gradient(90deg, #38bdf8, #3b82f6);
-          margin-bottom: 1.5rem;
-        }
-
-        .dh-hero-desc {
-          font-size: 15px; line-height: 1.75;
-          color: rgba(186,230,255,0.65);
-          max-width: 380px;
-          margin-bottom: 2.5rem;
-        }
-
-        .dh-features {
-          display: flex; flex-direction: column; gap: 12px;
-        }
-        .dh-feature {
-          display: flex; align-items: center; gap: 12px;
-          font-size: 13px; color: rgba(186,230,255,0.7);
-        }
-        .dh-feature-icon {
-          width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0;
-          background: rgba(59,130,246,0.12);
-          border: 1px solid rgba(59,130,246,0.2);
-          display: flex; align-items: center; justify-content: center;
-          color: #60a5fa;
-        }
-
-        /* ── right form panel ── */
-        .dh-form-panel {
-          flex: 1;
+        .brand-logo {
+          background: #ffffff;
+          padding: 20px 32px;
+          border-radius: 24px;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 1.25rem;
-          overflow-y: auto;
-        }
-        @media (min-width: 640px) { .dh-form-panel { padding: 2rem; } }
-        @media (min-width: 1024px) { .dh-form-panel { padding: 3rem; } }
-
-        .dh-form-box {
-          width: 100%; max-width: 440px;
+          box-shadow: 
+            0 24px 48px rgba(0, 0, 0, 0.2),
+            inset 0 0 0 1px rgba(255, 255, 255, 1);
+          width: auto; 
+          min-width: 160px;
         }
 
-        /* mobile-only logo header */
-        .dh-mobile-header {
-          display: flex; flex-direction: column; align-items: center; margin-bottom: 1.5rem;
-        }
-        @media (min-width: 1024px) { .dh-mobile-header { display: none; } }
-
-        .dh-mobile-logo {
-          width: 62px; height: 62px; border-radius: 18px;
-          background: rgba(255,255,255,0.96);
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 12px 36px rgba(59,130,246,0.22);
-          margin-bottom: 10px;
-        }
-        .dh-mobile-logo img { width: 44px; height: 44px; object-fit: contain; }
-
-        .dh-mobile-brand {
-          font-family: 'Syne', sans-serif;
-          font-size: 22px; font-weight: 800; letter-spacing: -0.02em;
-        }
-        .dh-mobile-tagline {
-          font-size: 12px; color: rgba(147,197,253,0.65); margin-top: 3px;
+        .brand-logo img {
+          height: 85px; /* FIX: Massive Desktop Logo */
+          width: auto;
+          max-width: 320px;
+          object-fit: contain;
         }
 
-        /* card */
-        .dh-card {
-          background: linear-gradient(180deg, rgba(15,23,60,0.90) 0%, rgba(10,16,45,0.95) 100%);
-          border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 24px;
-          padding: 2rem 1.75rem;
-          box-shadow: 0 24px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(59,130,246,0.08);
-          backdrop-filter: blur(20px);
+        .brand-text {
+          display: flex;
+          flex-direction: column;
         }
-        @media (min-width: 480px) { .dh-card { padding: 2.25rem 2rem; } }
 
-        .dh-card-eyebrow {
-          display: inline-flex; align-items: center; gap: 6px;
-          background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(6,182,212,0.15));
-          border: 1px solid rgba(59,130,246,0.25);
-          border-radius: 99px; padding: 5px 12px;
-          font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
-          color: rgba(147,197,253,0.9);
+        .brand-name {
+          font-size: clamp(34px, 3.2vw, 48px);
+          font-weight: 950;
+          letter-spacing: -0.05em;
+          line-height: 0.9;
+        }
+
+        .brand-tag {
+          margin-top: 10px;
+          font-size: 16px;
+          color: #b8efff;
+          font-weight: 700;
+        }
+
+        .hero {
+          position: relative;
+          z-index: 2;
+          max-width: 640px;
+        }
+
+        .live-pill {
+          width: fit-content;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 15px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.14);
+          border: 1px solid rgba(255,255,255,0.20);
+          color: rgba(255,255,255,0.95);
+          font-size: 13px;
+          font-weight: 850;
+          margin-bottom: 24px;
+          backdrop-filter: blur(8px);
+        }
+
+        .green-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #4ade80;
+          box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.2);
+        }
+
+        .hero h1 {
+          margin: 0;
+          font-size: clamp(48px, 5.7vw, 76px);
+          line-height: 1;
+          letter-spacing: -0.05em;
+          font-weight: 950;
+        }
+
+        .hero h1 span {
+          color: #b8efff;
+        }
+
+        .hero p {
+          margin: 24px 0 32px;
+          max-width: 520px;
+          color: rgba(255,255,255,0.85);
+          font-size: 18px;
+          line-height: 1.6;
+          font-weight: 400;
+        }
+
+        .chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        .chip {
+          padding: 12px 18px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.15);
+          font-size: 14px;
+          font-weight: 700;
+          color: white;
+          backdrop-filter: blur(8px);
+        }
+
+        .left-footer {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          gap: 16px;
+          color: rgba(255,255,255,0.72);
+          font-size: 13px;
+          font-weight: 600;
+        }
+
+        .right {
+          position: relative;
+          z-index: 10;
+          height: 100svh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: clamp(20px, 4vw, 62px);
+        }
+
+        .form-wrap {
+          width: min(520px, 100%);
+          position: relative;
+          z-index: 20;
+        }
+
+        .mobile-brand {
+          display: none;
+        }
+
+        .panel {
+          width: 100%;
+          padding: 48px;
+          border-radius: 38px;
+          background: rgba(255,255,255,0.92);
+          border: 1px solid rgba(255,255,255,1);
+          box-shadow:
+            0 40px 100px rgba(15,23,42,0.15),
+            inset 0 1px 0 rgba(255,255,255,1);
+          backdrop-filter: blur(30px);
+        }
+
+        .eyebrow {
+          color: #0284c7;
+          font-size: 13px;
+          font-weight: 900;
+          letter-spacing: 0.16em;
           text-transform: uppercase;
-          margin-bottom: 1rem;
         }
 
-        .dh-card-title {
-          font-family: 'Syne', sans-serif;
-          font-size: clamp(1.9rem, 5vw, 2.4rem);
-          font-weight: 800; letter-spacing: -0.03em;
-          line-height: 1.1; color: #fff;
-          margin-bottom: 0.35rem;
-        }
-        .dh-card-subtitle {
-          font-size: 14px; color: rgba(186,230,255,0.55);
-          margin-bottom: 1.6rem; line-height: 1.5;
+        .panel h2 {
+          margin: 12px 0 8px;
+          font-size: 42px;
+          line-height: 1.1;
+          letter-spacing: -0.05em;
+          font-weight: 900;
+          color: #0f172a;
         }
 
-        /* fields */
-        .dh-field { margin-bottom: 1rem; }
-        .dh-label {
-          display: block; font-size: 12px; font-weight: 600;
-          color: rgba(186,230,255,0.75); letter-spacing: 0.04em;
-          text-transform: uppercase; margin-bottom: 7px;
-        }
-        .dh-input-wrap {
-          display: flex; align-items: center; gap: 10px;
-          background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 14px; padding: 0 14px;
-          height: 50px;
-          transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-        }
-        .dh-input-wrap:focus-within {
-          border-color: rgba(59,130,246,0.55);
-          background: rgba(59,130,246,0.06);
-          box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-        }
-        .dh-input-icon { color: rgba(147,197,253,0.45); flex-shrink: 0; display: flex; }
-        .dh-input {
-          flex: 1; background: transparent; border: none; outline: none;
-          color: #fff; font-family: 'DM Sans', sans-serif;
-          font-size: 15px; font-weight: 400; height: 100%;
-        }
-        .dh-input::placeholder { color: rgba(255,255,255,0.22); }
-        .dh-eye-btn {
-          background: none; border: none; cursor: pointer;
-          color: rgba(147,197,253,0.4); display: flex; padding: 4px;
-          transition: color 0.15s;
-        }
-        .dh-eye-btn:hover { color: rgba(147,197,253,0.75); }
-
-        /* forgot link */
-        .dh-forgot-row {
-          display: flex; justify-content: flex-end; margin-bottom: 0.85rem; margin-top: -0.25rem;
-        }
-        .dh-forgot-btn {
-          background: none; border: none; cursor: pointer;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 13px; font-weight: 500;
-          color: rgba(56,189,248,0.8);
-          transition: color 0.15s;
-        }
-        .dh-forgot-btn:hover { color: #67e8f9; }
-
-        /* error */
-        .dh-error {
-          background: rgba(239,68,68,0.08);
-          border: 1px solid rgba(239,68,68,0.2);
-          border-radius: 12px; padding: 10px 14px;
-          font-size: 13px; color: rgba(252,165,165,0.9);
-          margin-bottom: 0.85rem; line-height: 1.5;
-        }
-        .dh-error-pending {
-          font-weight: 600; color: rgba(251,191,36,0.9);
-          margin-top: 4px; font-size: 12px;
+        .sub {
+          margin: 0 0 32px;
+          color: #475569;
+          line-height: 1.55;
+          font-size: 16px;
         }
 
-        /* submit btn */
-        .dh-submit {
-          width: 100%; height: 52px;
-          background: linear-gradient(135deg, #2563eb 0%, #0284c7 60%, #0891b2 100%);
-          border: none; border-radius: 14px; cursor: pointer;
-          font-family: 'DM Sans', sans-serif;
-          font-size: 15px; font-weight: 600; color: #fff;
-          display: flex; align-items: center; justify-content: center; gap: 10px;
-          box-shadow: 0 8px 28px rgba(37,99,235,0.38), 0 0 0 1px rgba(255,255,255,0.08) inset;
-          transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
-          position: relative; overflow: hidden;
-        }
-        .dh-submit::before {
-          content: '';
-          position: absolute; inset: 0;
-          background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
-        }
-        .dh-submit:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 14px 36px rgba(37,99,235,0.48), 0 0 0 1px rgba(255,255,255,0.1) inset;
-        }
-        .dh-submit:active:not(:disabled) { transform: translateY(0); }
-        .dh-submit:disabled { opacity: 0.65; cursor: not-allowed; }
-        .dh-submit-arrow {
-          transition: transform 0.2s;
-          display: flex; align-items: center;
-        }
-        .dh-submit:hover:not(:disabled) .dh-submit-arrow { transform: translateX(3px); }
-
-        /* signup link */
-        .dh-signup-row {
-          text-align: center; margin-top: 1.25rem;
-          font-size: 13.5px; color: rgba(186,230,255,0.5);
-        }
-        .dh-signup-row a {
-          color: rgba(56,189,248,0.85); font-weight: 600;
-          text-decoration: none; transition: color 0.15s;
-        }
-        .dh-signup-row a:hover { color: #67e8f9; }
-
-        /* card footer */
-        .dh-card-footer {
-          margin-top: 1.25rem;
-          padding-top: 1rem;
-          border-top: 1px solid rgba(255,255,255,0.06);
-          display: flex; align-items: center; justify-content: center; gap: 6px;
-          font-size: 11.5px; color: rgba(255,255,255,0.28);
-        }
-        .dh-card-footer svg { opacity: 0.5; }
-
-        /* ── modal overlay ── */
-        .dh-overlay {
-          position: fixed; inset: 0; z-index: 100;
-          background: rgba(0,0,0,0.65);
-          backdrop-filter: blur(6px);
-          display: flex; align-items: center; justify-content: center;
-          padding: 1.25rem;
-          animation: fadeIn 0.18s ease;
-        }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .dh-modal {
-          background: linear-gradient(180deg, #0d1845 0%, #080e2e 100%);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 22px; width: 100%; max-width: 420px;
-          padding: 1.75rem;
-          box-shadow: 0 30px 90px rgba(0,0,0,0.6);
-          animation: slideUp 0.22s ease;
-        }
-        @keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .dh-modal-header {
-          display: flex; align-items: flex-start; justify-content: space-between;
-          margin-bottom: 1.4rem; gap: 12px;
-        }
-        .dh-modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-        .dh-modal-sub   { font-size: 13px; color: rgba(186,230,255,0.5); }
-        .dh-modal-close {
-          background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 10px; width: 32px; height: 32px; flex-shrink: 0;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; color: rgba(255,255,255,0.5);
-          transition: background 0.15s, color 0.15s;
-        }
-        .dh-modal-close:hover { background: rgba(255,255,255,0.12); color: #fff; }
-
-        .dh-modal-field { margin-bottom: 1rem; }
-        .dh-modal-label { display: block; font-size: 12px; font-weight: 600; color: rgba(186,230,255,0.7); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 7px; }
-        .dh-modal-input {
-          width: 100%; background: rgba(255,255,255,0.04);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 12px; padding: 12px 14px;
-          color: #fff; font-family: 'DM Sans', sans-serif; font-size: 14px;
-          outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .dh-modal-input:focus {
-          border-color: rgba(59,130,246,0.5);
-          box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
-        }
-        .dh-modal-input::placeholder { color: rgba(255,255,255,0.2); }
-
-        .dh-modal-success {
-          background: rgba(52,211,153,0.08); border: 1px solid rgba(52,211,153,0.2);
-          border-radius: 12px; padding: 10px 14px;
-          font-size: 13px; color: rgba(110,231,183,0.9);
-          margin-bottom: 1rem; line-height: 1.5;
-        }
-        .dh-modal-error {
-          background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
-          border-radius: 12px; padding: 10px 14px;
-          font-size: 13px; color: rgba(252,165,165,0.9);
-          margin-bottom: 1rem; line-height: 1.5;
+        .field {
+          margin-bottom: 18px;
         }
 
-        .dh-modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 0.5rem; }
-        .dh-btn-cancel {
-          background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 12px; height: 46px; cursor: pointer;
-          font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.7);
-          transition: background 0.15s;
-        }
-        .dh-btn-cancel:hover { background: rgba(255,255,255,0.1); }
-        .dh-btn-send {
-          background: linear-gradient(135deg, #2563eb, #0891b2);
-          border: none; border-radius: 12px; height: 46px; cursor: pointer;
-          font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; color: #fff;
-          box-shadow: 0 6px 20px rgba(37,99,235,0.3);
-          transition: opacity 0.15s, transform 0.15s;
-        }
-        .dh-btn-send:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
-        .dh-btn-send:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        /* spinner */
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .dh-spinner {
-          width: 16px; height: 16px; border-radius: 50%;
-          border: 2px solid rgba(255,255,255,0.25);
-          border-top-color: #fff;
-          animation: spin 0.7s linear infinite;
-          display: inline-block;
+        .field label {
+          display: block;
+          margin-bottom: 8px;
+          font-size: 13px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: #334155;
         }
 
-        /* power strip — bottom of hero */
-        .dh-power-strip {
-          position: absolute; bottom: 2rem; left: 4rem; right: 3rem;
-          display: flex; align-items: center; gap: 8px;
-          font-size: 11px; color: rgba(255,255,255,0.25);
+        .input {
+          height: 60px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 0 18px;
+          border-radius: 20px;
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+          transition: all 0.2s ease;
         }
-        @media (min-width: 1280px) { .dh-power-strip { left: 5rem; } }
-        .dh-power-dot { width: 1px; height: 12px; background: rgba(255,255,255,0.15); }
 
-        /* page-level fade in */
-        @keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .dh-form-box { animation: pageIn 0.4s ease both; }
-        .dh-hero > * { animation: pageIn 0.5s ease both; }
-        .dh-hero > *:nth-child(2) { animation-delay: 0.05s; }
-        .dh-hero > *:nth-child(3) { animation-delay: 0.1s; }
-        .dh-hero > *:nth-child(4) { animation-delay: 0.15s; }
-        .dh-hero > *:nth-child(5) { animation-delay: 0.2s; }
-        .dh-hero > *:nth-child(6) { animation-delay: 0.25s; }
+        .input:focus-within {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
 
-        /* ensure no body scroll bleeds through */
-        html, body, #root { height: 100%; overflow: hidden; }
+        .input span {
+          font-size: 18px;
+          opacity: 0.7;
+        }
+
+        .input input {
+          flex: 1;
+          min-width: 0;
+          height: 100%;
+          border: 0;
+          outline: 0;
+          background: transparent;
+          color: #0f172a;
+          font-size: 16px;
+          font-weight: 500;
+        }
+
+        .input input::placeholder {
+          color: #94a3b8;
+          font-weight: 400;
+        }
+
+        .eye {
+          border: 0;
+          background: transparent;
+          cursor: pointer;
+          font-size: 18px;
+          opacity: 0.6;
+          transition: 0.2s;
+        }
+        
+        .eye:hover {
+          opacity: 1;
+        }
+
+        .forgot {
+          text-align: right;
+          margin: 4px 0 20px;
+        }
+
+        .forgot button {
+          border: 0;
+          background: transparent;
+          cursor: pointer;
+          color: #0284c7;
+          font-weight: 700;
+          font-size: 14px;
+          transition: 0.2s;
+        }
+        
+        .forgot button:hover {
+          color: #0369a1;
+          text-decoration: underline;
+        }
+
+        .error {
+          margin-bottom: 16px;
+          padding: 12px 16px;
+          border-radius: 16px;
+          background: #fff1f2;
+          border: 1px solid #fecdd3;
+          color: #be123c;
+          font-size: 14px;
+          font-weight: 500;
+          line-height: 1.5;
+        }
+
+        .pending {
+          color: #92400e;
+          font-weight: 800;
+          margin-top: 6px;
+        }
+
+        .login-btn {
+          width: 100%;
+          height: 64px;
+          border: 0;
+          border-radius: 22px;
+          cursor: pointer;
+          color: white;
+          font-weight: 800;
+          font-size: 17px;
+          letter-spacing: 0.02em;
+          background: linear-gradient(135deg, #0ea5e9, #2563eb);
+          box-shadow: 0 15px 30px rgba(37,99,235,0.25);
+          transition: all 0.2s ease;
+        }
+
+        .login-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 20px 40px rgba(37,99,235,0.35);
+          background: linear-gradient(135deg, #0284c7, #1d4ed8);
+        }
+
+        .login-btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
+
+        .signup {
+          margin-top: 24px;
+          text-align: center;
+          font-size: 15px;
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        .signup a {
+          color: #2563eb;
+          font-weight: 800;
+          text-decoration: none;
+        }
+        
+        .signup a:hover {
+          text-decoration: underline;
+        }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 99;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+          background: rgba(15,23,42,0.65);
+          backdrop-filter: blur(10px);
+        }
+
+        .modal {
+          width: min(460px, 100%);
+          background: #ffffff;
+          padding: 32px;
+          border-radius: 32px;
+          box-shadow: 0 40px 100px rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* --- MOBILE SAAS OPTIMIZATION --- */
+        @media (max-width: 900px) {
+          .login-screen {
+            grid-template-columns: 1fr;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: linear-gradient(135deg, #f0f7ff 0%, #dbeafe 100%); /* Richer mobile background */
+          }
+
+          .left {
+            display: none;
+          }
+
+          .right {
+            width: 100%;
+            height: 100svh;
+            padding: 16px;
+            align-items: center;
+          }
+
+          .form-wrap {
+            max-width: 480px;
+          }
+
+          /* FORCE LOGO TO CENTER AND MAKE IT MASSIVE */
+          .mobile-brand {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 40px; /* Big gap before panel */
+          }
+
+          .mobile-brand img {
+            background: #ffffff;
+            padding: 20px 40px;
+            border-radius: 28px;
+            height: 100px; /* FIX: Massive Mobile Logo */
+            width: auto;
+            max-width: 90%;
+            object-fit: contain;
+            box-shadow: 
+              0 20px 40px rgba(37, 99, 235, 0.15), 
+              0 4px 12px rgba(37, 99, 235, 0.08),
+              inset 0 0 0 1px rgba(255, 255, 255, 1);
+          }
+
+          .panel {
+            padding: 40px 32px;
+            border-radius: 36px;
+            background: rgba(255, 255, 255, 0.88);
+          }
+
+          .panel h2 {
+            font-size: 34px;
+            text-align: center;
+          }
+
+          .eyebrow,
+          .sub {
+            text-align: center;
+          }
+
+          .sub {
+            margin-bottom: 24px;
+            font-size: 15px;
+          }
+
+          .input {
+            height: 58px;
+          }
+
+          .login-btn {
+            height: 60px;
+          }
+
+          /* Ensure orbs sit perfectly on mobile for a rich SaaS feel */
+          .orb.one {
+            width: 300px;
+            height: 300px;
+            left: -100px;
+            top: 0px;
+          }
+          .orb.two {
+            width: 300px;
+            height: 300px;
+            right: -50px;
+            bottom: 0px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .right {
+            padding: 16px;
+          }
+
+          .mobile-brand img {
+            height: 85px; /* Still very large on small phones */
+            padding: 16px 32px;
+            border-radius: 24px;
+          }
+
+          .panel {
+            padding: 32px 24px;
+            border-radius: 32px;
+          }
+
+          .panel h2 {
+            font-size: 30px;
+          }
+
+          .sub {
+            font-size: 14px;
+          }
+        }
+
+        @media (max-height: 720px) {
+          .mobile-brand {
+            margin-bottom: 24px;
+          }
+          
+          .mobile-brand img {
+            height: 75px;
+            padding: 12px 24px;
+          }
+
+          .panel {
+            padding: 24px;
+          }
+
+          .panel h2 {
+            font-size: 28px;
+            margin: 8px 0;
+          }
+
+          .sub {
+            margin-bottom: 16px;
+          }
+
+          .field {
+            margin-bottom: 12px;
+          }
+
+          .input {
+            height: 52px;
+          }
+
+          .login-btn {
+            height: 56px;
+          }
+        }
       `}</style>
 
-      <div className="dh-root">
-        {/* Background */}
-        <div className="dh-bg">
-          <div className="dh-grid" />
-          <div className="dh-orb dh-orb-1" />
-          <div className="dh-orb dh-orb-2" />
-          <div className="dh-orb dh-orb-3" />
-        </div>
+      <main className="login-screen">
+        {/* Dynamic SaaS background elements */}
+        <div className="mesh" />
+        <div className="orb one" />
+        <div className="orb two" />
 
-        <div className="dh-layout">
+        <section className="left">
+          <div className="brand">
+            <div className="brand-logo">
+              <img src={logo} alt={brandName} />
+            </div>
+            <div className="brand-text">
+              <div className="brand-name">{brandName}</div>
+              <div className="brand-tag">{tagline}</div>
+            </div>
+          </div>
 
-          {/* ── LEFT HERO (desktop) ── */}
-          <div className="dh-hero">
-            <div className="dh-hero-badge">
-              <span className="dh-hero-badge-dot" />
-              Platform Live
+          <div className="hero">
+            <div className="live-pill">
+              <span className="green-dot" />
+              CRM workspace is ready
             </div>
 
-            <div className="dh-logo-wrap">
+            <h1>
+              Convert every lead into a <span>clear next action.</span>
+            </h1>
+
+            <p>
+              A premium insurance CRM to manage leads, contacts, WhatsApp templates,
+              follow-ups and advisor performance — built for daily selling discipline.
+            </p>
+
+            <div className="chips">
+              <div className="chip">💬 WhatsApp-first CRM</div>
+              <div className="chip">📊 Smart follow-ups</div>
+              <div className="chip">🔐 Secure access</div>
+              <div className="chip">🚀 Built for growth</div>
+            </div>
+          </div>
+
+          <div className="left-footer">
+            <span>Digital insurance growth system</span>
+            <span>•</span>
+            <span>Powered by {brandName}</span>
+          </div>
+        </section>
+
+        <section className="right">
+          <div className="form-wrap">
+            
+            {/* MASSIVE MOBILE BRAND CONTAINER */}
+            <div className="mobile-brand">
               <img src={logo} alt={brandName} />
             </div>
 
-            <h1 className="dh-hero-title">
-              Secure leads.<br />
-              Build trust.<br />
-              <span>Grow smarter.</span>
-            </h1>
+            <div className="panel">
+              <div className="eyebrow">Welcome back</div>
+              <h2>Login to dashboard</h2>
+              <p className="sub">
+                Access your leads, contacts, follow-ups and growth workspace.
+              </p>
 
-            <div className="dh-divider" />
-
-            <p className="dh-hero-desc">
-              India's premium CRM built exclusively for insurance advisors. Manage clients, follow-ups, templates and communication — all in one place.
-            </p>
-
-            <div className="dh-features">
-              {[
-                { icon: "📋", text: "Lead & contact management" },
-                { icon: "💬", text: "WhatsApp template sharing" },
-                { icon: "📊", text: "Performance analytics" },
-              ].map((f) => (
-                <div className="dh-feature" key={f.text}>
-                  <div className="dh-feature-icon" style={{ fontSize: 14 }}>{f.icon}</div>
-                  {f.text}
+              <div className="field">
+                <label>Email or Mobile</label>
+                <div className="input">
+                  <span>✉️</span>
+                  <input
+                    type="text"
+                    placeholder="you@example.com or mobile"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                    autoComplete="username"
+                  />
                 </div>
-              ))}
-            </div>
-
-            <div className="dh-power-strip">
-              <IconShield />
-              <span>Powered by {brandName}</span>
-              <span className="dh-power-dot" />
-              <span>{tagline}</span>
-            </div>
-          </div>
-
-          {/* ── RIGHT FORM ── */}
-          <div className="dh-form-panel">
-            <div className="dh-form-box">
-
-              {/* Mobile header */}
-              <div className="dh-mobile-header">
-                <div className="dh-mobile-logo">
-                  <img src={logo} alt={brandName} />
-                </div>
-                <div className="dh-mobile-brand">{brandName}</div>
-                <div className="dh-mobile-tagline">{tagline}</div>
               </div>
 
-              {/* Card */}
-              <div className="dh-card">
-                <div className="dh-card-eyebrow">
-                  <span className="dh-hero-badge-dot" style={{ width: 6, height: 6 }} />
-                  Welcome back
-                </div>
-                <h2 className="dh-card-title">Login</h2>
-                <p className="dh-card-subtitle">Email or mobile · Your choice</p>
-
-                {/* Identifier */}
-                <div className="dh-field">
-                  <label className="dh-label">Email or Mobile</label>
-                  <div className="dh-input-wrap">
-                    <span className="dh-input-icon"><IconMail /></span>
-                    <input
-                      className="dh-input"
-                      type="text"
-                      placeholder="you@example.com or 9XXXXXXXXX"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                      autoComplete="username"
-                    />
-                  </div>
-                </div>
-
-                {/* Password */}
-                <div className="dh-field">
-                  <label className="dh-label">Password</label>
-                  <div className="dh-input-wrap">
-                    <span className="dh-input-icon"><IconLock /></span>
-                    <input
-                      className="dh-input"
-                      type={showPwd ? "text" : "password"}
-                      placeholder="Your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                      autoComplete="current-password"
-                    />
-                    <button className="dh-eye-btn" type="button" onClick={() => setShowPwd((p) => !p)}>
-                      {showPwd ? <IconEyeOff /> : <IconEye />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Forgot */}
-                <div className="dh-forgot-row">
-                  <button className="dh-forgot-btn" type="button"
-                    onClick={() => { setShowForgot(true); setForgotError(""); setForgotSuccess(""); setForgotId(identifier); }}>
-                    Forgot password?
+              <div className="field">
+                <label>Password</label>
+                <div className="input">
+                  <span>🔒</span>
+                  <input
+                    type={showPwd ? "text" : "password"}
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                    autoComplete="current-password"
+                  />
+                  <button className="eye" type="button" onClick={() => setShowPwd((p) => !p)}>
+                    {showPwd ? "🙈" : "👁️"}
                   </button>
                 </div>
+              </div>
 
-                {/* Error */}
-                {errorMsg && (
-                  <div className="dh-error">
-                    {errorMsg}
-                    {pendingPayment && <div className="dh-error-pending">⚠ Account pending payment activation.</div>}
-                  </div>
-                )}
-
-                {/* Submit */}
-                <button className="dh-submit" onClick={handleLogin} disabled={loading}>
-                  {loading
-                    ? <><span className="dh-spinner" /> Logging in…</>
-                    : <><span>Login to Dashboard</span><span className="dh-submit-arrow"><IconArrow /></span></>
-                  }
+              <div className="forgot">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgot(true);
+                    setForgotError("");
+                    setForgotSuccess("");
+                    setForgotId(identifier);
+                  }}
+                >
+                  Forgot password?
                 </button>
+              </div>
 
-                {/* Signup link */}
-                <div className="dh-signup-row">
-                  New advisor?{" "}
-                  <Link to="/signup">Create your account →</Link>
+              {errorMsg && (
+                <div className="error">
+                  {errorMsg}
+                  {pendingPayment && (
+                    <div className="pending">Account pending payment activation.</div>
+                  )}
                 </div>
+              )}
 
-                {/* Footer */}
-                <div className="dh-card-footer">
-                  <IconShield />
-                  {brandName} · {tagline}
-                </div>
+              <button className="login-btn" onClick={handleLogin} disabled={loading}>
+                {loading ? "Logging in..." : "Login securely →"}
+              </button>
+
+              <div className="signup">
+                New advisor? <Link to="/signup">Create account</Link>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
 
-      {/* ── FORGOT PASSWORD MODAL ── */}
+      {/* Forgot Password Modal logic remains unchanged */}
       {showForgot && (
-        <div className="dh-overlay" onClick={(e) => e.target === e.currentTarget && setShowForgot(false)}>
-          <div className="dh-modal">
-            <div className="dh-modal-header">
+        <div
+          className="modal-overlay"
+          onClick={(e) => e.target === e.currentTarget && setShowForgot(false)}
+        >
+          <div className="modal">
+            <div className="modal-head">
               <div>
-                <div className="dh-modal-title">Forgot Password</div>
-                <div className="dh-modal-sub">We'll send a reset request to the admin</div>
+                <h3>Forgot password?</h3>
+                <p>Enter your email or mobile. Admin will receive your reset request.</p>
               </div>
-              <button className="dh-modal-close" onClick={() => setShowForgot(false)}><IconX /></button>
+              <button className="close" onClick={() => setShowForgot(false)}>×</button>
             </div>
 
-            <div className="dh-modal-field">
-              <label className="dh-modal-label">Email or Mobile</label>
-              <input className="dh-modal-input" type="text"
-                placeholder="Enter your email or mobile"
-                value={forgotId}
-                onChange={(e) => setForgotId(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleForgot()}
-              />
-            </div>
+            <input
+              className="modal-input"
+              type="text"
+              placeholder="Email or mobile"
+              value={forgotId}
+              onChange={(e) => setForgotId(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleForgot()}
+            />
 
-            {forgotError   && <div className="dh-modal-error">{forgotError}</div>}
-            {forgotSuccess && <div className="dh-modal-success">{forgotSuccess}</div>}
+            {forgotError && <div className="msg error">{forgotError}</div>}
+            {forgotSuccess && <div className="msg success">{forgotSuccess}</div>}
 
-            <div className="dh-modal-actions">
-              <button className="dh-btn-cancel" onClick={() => setShowForgot(false)}>Cancel</button>
-              <button className="dh-btn-send" onClick={handleForgot} disabled={forgotLoading}>
-                {forgotLoading ? <span className="dh-spinner" /> : "Send Request"}
+            <div className="modal-actions">
+              <button className="cancel" onClick={() => setShowForgot(false)}>
+                Cancel
+              </button>
+              <button className="send" onClick={handleForgot} disabled={forgotLoading}>
+                {forgotLoading ? "Sending..." : "Send Request"}
               </button>
             </div>
           </div>
