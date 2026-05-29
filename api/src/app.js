@@ -100,7 +100,7 @@ app.use("/", chatflowRoutes);
 /* =========================
    REACT FALLBACK
 ========================= */
-app.get("*", (req, res) => {
+app.get("/{*any}", (req, res) => {
   if (req.accepts("html")) {
     return res.sendFile(path.join(appPath, "index.html"));
   }
@@ -109,10 +109,4 @@ app.get("*", (req, res) => {
     success: false,
     message: "API route not found",
   });
-});
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
