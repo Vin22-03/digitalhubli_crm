@@ -2,6 +2,15 @@ import express from "express";
 
 import {
   getAllCompanies,
+  createCompany,
+  updateCompany,
+  toggleCompanyStatus,
+
+  getAllPlansAdmin,
+  createInsurancePlan,
+  updateInsurancePlan,
+  toggleInsurancePlanStatus,
+
   getAllAdvisors,
   createAdvisor,
   updateAdvisor,
@@ -27,9 +36,20 @@ import { protect, adminOnly } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 /* =========================
-   COMPANY
+   COMPANY MANAGEMENT
 ========================= */
 router.get("/companies", protect, adminOnly, getAllCompanies);
+router.post("/companies", protect, adminOnly, createCompany);
+router.put("/companies/:companyId", protect, adminOnly, updateCompany);
+router.patch("/companies/:companyId/toggle", protect, adminOnly, toggleCompanyStatus);
+
+/* =========================
+   INSURANCE PLAN MANAGEMENT
+========================= */
+router.get("/plans", protect, adminOnly, getAllPlansAdmin);
+router.post("/plans", protect, adminOnly, createInsurancePlan);
+router.put("/plans/:planId", protect, adminOnly, updateInsurancePlan);
+router.patch("/plans/:planId/toggle", protect, adminOnly, toggleInsurancePlanStatus);
 
 /* =========================
    ADVISOR MANAGEMENT
@@ -62,6 +82,6 @@ router.delete("/templates/:templateId", protect, adminOnly, deleteTemplate);
 router.get("/advisor-performance", protect, adminOnly, getAdvisorPerformance);
 router.get("/advisor-leads/:advisorId", protect, adminOnly, getAdvisorLeadsForAdmin);
 router.get("/advisors/:advisorId/leads", protect, adminOnly, getAdvisorLeadsForAdmin);
-router.get("/advisor-performance", protect, adminOnly, getAdvisorPerformance);
 router.get("/advisors/performance", protect, adminOnly, getAdvisorPerformance);
+
 export default router;

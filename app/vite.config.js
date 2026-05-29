@@ -7,15 +7,23 @@ export default defineConfig({
 
   server: {
     proxy: {
-      "/auth": "http://localhost:5000",
-      "/admin": "http://localhost:5000",
-      "/templates": "http://localhost:5000",
-      "/leads": "http://localhost:5000",
-      "/contacts": "http://localhost:5000",
-      "/dashboard": "http://localhost:5000",
-      "/profile": "http://localhost:5000",
-      "/resources": "http://localhost:5000",
-      "/uploads": "http://localhost:5000",
+      "/auth":          "http://localhost:5000",
+      "/admin": {
+        target: "http://localhost:5000",
+        // HTML navigation requests (hard refresh) should fall back to index.html,
+        // not be forwarded to Express which has no HTML route for /admin/...
+        bypass(req) {
+          if (req.headers.accept?.includes("text/html")) return "/index.html";
+        },
+      },
+      "/subscriptions": "http://localhost:5000",
+      "/templates":     "http://localhost:5000",
+      "/leads":         "http://localhost:5000",
+      "/contacts":      "http://localhost:5000",
+      "/dashboard":     "http://localhost:5000",
+      "/profile":       "http://localhost:5000",
+      "/resources":     "http://localhost:5000",
+      "/uploads":       "http://localhost:5000",
     },
   },
 });

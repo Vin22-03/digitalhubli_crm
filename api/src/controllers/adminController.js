@@ -1123,3 +1123,202 @@ export const getAdvisorLeadsForAdmin = async (req, res) => {
     });
   }
 };
+/* ═══════════════════════════════════════════════════════════
+   ADD THESE FUNCTIONS to api/src/controllers/adminController.js
+   Paste them anywhere among the other exports (e.g. after getAllCompanies)
+═══════════════════════════════════════════════════════════ */
+
+/* =========================
+   COMPANY MANAGEMENT
+========================= */
+
+// Create a new insurance company (LIC, Tata AIG, etc.)
+export const createCompany = async (req, res) => {
+  try {
+    const { name, code } = req.body;
+
+    if (!name || !code) {
+      return res.status(400).json({ message: "Company name and code are required." });
+    }
+
+    // check duplicate code
+    const [[existing]] = await db.query(
+      `SELECT id FROM \`Company\` WHERE code = ? LIMIT 1`,
+      [code.trim().toUpperCase()]
+    );
+    if (existing) {
+      return res.status(409).json({ message: "A company with this code already exists." });
+    }
+
+    const [result] = await db.query(
+      `INSERT INTO \`Company\` (name, code, isActive, createdAt, updatedAt)
+       VALUES (?, ?, 1, NOW(), NOW())`,
+      [name.trim(), code.trim().toUpperCase()]
+    );
+
+    return res.status(201).json({
+      message: "Company created successfully.",
+      company: { id: result.insertId, name: name.trim(), code: code.trim().toUpperCase() },
+    });
+  } catch (error) {
+    console.error("createCompany error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Update a company
+export const updateCompany = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    const { name, code } = req.body;
+
+    if (!name || !code) {
+      return res.status(400).json({ message: "Company name and code are required." });
+    }
+
+    await db.query(
+      `UPDATE \`Company\` SET name = ?, code = ?, updatedAt = NOW() WHERE id = ?`,
+      [name.trim(), code.trim().toUpperCase(), Number(companyId)]
+    );
+
+    return res.status(200).json({ message: "Company updated successfully." });
+  } catch (error) {
+    console.error("updateCompany error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Toggle company active/inactive
+export const toggleCompanyStatus = async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    const [[company]] = await db.query(
+      `SELECT id, isActive FROM \`Company\` WHERE id = ? LIMIT 1`,
+      [Number(companyId)]
+    );
+    if (!company) return res.status(404).json({ message: "Company not found." });
+
+    const newStatus = company.isActive ? 0 : 1;
+    await db.query(
+      `UPDATE \`Company\` SET isActive = ?, updatedAt = NOW() WHERE id = ?`,
+      [newStatus, Number(companyId)]
+    );
+
+    return res.status(200).json({ message: "Company status updated.", isActive: Boolean(newStatus) });
+  } catch (error) {
+    console.error("toggleCompanyStatus error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+/* =========================
+   INSURANCE PLAN MANAGEMENT
+   (e.g. Jeevan Anand, Medicare — the plans advisors pick on dashboard)
+========================= */
+
+// Get all plans (admin view — includes inactive)
+export const getAllPlansAdmin = async (req, res) => {
+  try {
+    const [plans] = await db.query(
+      `SELECT p.id, p.companyId, p.name, p.code, p.minAge, p.maxAge,
+              p.brochureUrl, p.description, p.isActive, p.createdAt,
+              c.name AS company_name, c.code AS company_code
+       FROM \`Plan\` p
+       JOIN \`Company\` c ON c.id = p.companyId
+       ORDER BY c.name ASC, p.name ASC`
+    );
+    return res.status(200).json({ plans });
+  } catch (error) {
+    console.error("getAllPlansAdmin error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Create an insurance plan under a company
+export const createInsurancePlan = async (req, res) => {
+  try {
+    const { companyId, name, code, minAge, maxAge, brochureUrl, description } = req.body;
+
+    if (!companyId || !name) {
+      return res.status(400).json({ message: "Company and plan name are required." });
+    }
+
+    const [result] = await db.query(
+      `INSERT INTO \`Plan\`
+       (companyId, name, code, minAge, maxAge, brochureUrl, description, isActive, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())`,
+      [
+        Number(companyId),
+        name.trim(),
+        code || null,
+        minAge ? Number(minAge) : null,
+        maxAge ? Number(maxAge) : null,
+        brochureUrl || null,
+        description || null,
+      ]
+    );
+
+    return res.status(201).json({
+      message: "Plan created successfully.",
+      planId: result.insertId,
+    });
+  } catch (error) {
+    console.error("createInsurancePlan error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Update an insurance plan
+export const updateInsurancePlan = async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const { name, code, minAge, maxAge, brochureUrl, description } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: "Plan name is required." });
+    }
+
+    await db.query(
+      `UPDATE \`Plan\`
+       SET name = ?, code = ?, minAge = ?, maxAge = ?, brochureUrl = ?, description = ?, updatedAt = NOW()
+       WHERE id = ?`,
+      [
+        name.trim(),
+        code || null,
+        minAge ? Number(minAge) : null,
+        maxAge ? Number(maxAge) : null,
+        brochureUrl || null,
+        description || null,
+        Number(planId),
+      ]
+    );
+
+    return res.status(200).json({ message: "Plan updated successfully." });
+  } catch (error) {
+    console.error("updateInsurancePlan error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Toggle plan active/inactive
+export const toggleInsurancePlanStatus = async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const [[plan]] = await db.query(
+      `SELECT id, isActive FROM \`Plan\` WHERE id = ? LIMIT 1`,
+      [Number(planId)]
+    );
+    if (!plan) return res.status(404).json({ message: "Plan not found." });
+
+    const newStatus = plan.isActive ? 0 : 1;
+    await db.query(
+      `UPDATE \`Plan\` SET isActive = ?, updatedAt = NOW() WHERE id = ?`,
+      [newStatus, Number(planId)]
+    );
+
+    return res.status(200).json({ message: "Plan status updated.", isActive: Boolean(newStatus) });
+  } catch (error) {
+    console.error("toggleInsurancePlanStatus error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};

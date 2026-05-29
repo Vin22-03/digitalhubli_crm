@@ -10,6 +10,7 @@ import {
   FiBarChart2,
   FiKey,
   FiCreditCard,
+  FiBriefcase,
   FiMenu,
   FiX,
   FiLogOut,
@@ -22,16 +23,16 @@ const navItems = [
   { key: "contacts", label: "Contacts", path: "/admin/contacts", icon: <FiPhone /> },
   { key: "resources", label: "Resources", path: "/admin/resources", icon: <FiBook /> },
   {
-    key: "advisor-performance",
-    label: "Performance",
-    path: "/admin/advisors/performance",
-    icon: <FiBarChart2 />,
-  },
-  {
     key: "passwords",
     label: "Passwords",
     path: "/admin/password-requests",
     icon: <FiKey />,
+  },
+  {
+    key: "companies",
+    label: "Companies",
+    path: "/admin/companies",
+    icon: <FiBriefcase />,
   },
   {
     key: "subscriptions",

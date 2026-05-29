@@ -10,7 +10,23 @@ import {
   FiFileText,
   FiChevronLeft,
   FiChevronRight,
+  FiMessageSquare,
+  FiUsers,
+  FiClock,
+  FiPlus,
+  FiActivity,
 } from "react-icons/fi";
+
+const ACTIVITY_META = {
+  CALL:            { label: "Call",          icon: FiPhone,          color: "bg-blue-100 text-blue-700" },
+  WHATSAPP:        { label: "WhatsApp",      icon: FaWhatsapp,       color: "bg-emerald-100 text-emerald-700" },
+  NOTE:            { label: "Note",          icon: FiFileText,       color: "bg-amber-100 text-amber-700" },
+  MEETING:         { label: "Meeting",       icon: FiUsers,          color: "bg-violet-100 text-violet-700" },
+  STATUS_CHANGE:   { label: "Status change", icon: FiActivity,       color: "bg-slate-100 text-slate-700" },
+  TEMPLATE_SHARED: { label: "Template sent", icon: FiMessageSquare,  color: "bg-sky-100 text-sky-700" },
+  LEAD_CREATED:    { label: "Lead created",  icon: FiPlus,           color: "bg-green-100 text-green-700" },
+  CONTACT_CREATED: { label: "Contact added", icon: FiPlus,           color: "bg-green-100 text-green-700" },
+};
 
 const statusStyles = {
   NEW: "bg-blue-50 text-blue-700 border-blue-200",
@@ -149,6 +165,12 @@ function AdvisorLeads() {
   const [remarksInput, setRemarksInput] = useState("");
   const [followUpInput, setFollowUpInput] = useState("");
 
+  // ── Activity timeline state ──
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [newActivity, setNewActivity] = useState({ type: "NOTE", note: "", followUp: "" });
+  const [savingActivity, setSavingActivity] = useState(false);
+
   const [kpis, setKpis] = useState({
     totalLeads: 0,
     todayFollowUps: 0,
@@ -179,8 +201,53 @@ function AdvisorLeads() {
       setFollowUpInput(
         selectedLead.nextFollowUp ? selectedLead.nextFollowUp.slice(0, 16) : ""
       );
+      // load activity timeline for this lead
+      loadActivities(selectedLead.id);
+      setNewActivity({ type: "NOTE", note: "", followUp: "" });
+    } else {
+      setActivities([]);
     }
   }, [selectedLead]);
+
+  const loadActivities = async (leadId) => {
+    try {
+      setActivitiesLoading(true);
+      const res = await API.get(`/leads/${leadId}/activities`);
+      setActivities(res.data.activities || []);
+    } catch (error) {
+      console.error("Failed to load activities:", error);
+      setActivities([]);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
+  const handleAddActivity = async () => {
+    if (!selectedLead) return;
+    if (newActivity.type === "NOTE" && !newActivity.note.trim()) {
+      alert("Please write a note before adding.");
+      return;
+    }
+    try {
+      setSavingActivity(true);
+      await API.post(`/leads/${selectedLead.id}/activities`, {
+        activityType: newActivity.type,
+        note: newActivity.note.trim() || null,
+        nextFollowUpAt: newActivity.followUp || null,
+        sourcePage: "LEADS_PAGE",
+        templateId: selectedLead?.template?.id || null,
+      });
+      // reload timeline + leads list
+      await loadActivities(selectedLead.id);
+      await fetchLeads(page, search, activeFilter);
+      setNewActivity({ type: "NOTE", note: "", followUp: "" });
+    } catch (error) {
+      console.error("Failed to add activity:", error);
+      alert(error?.response?.data?.message || "Failed to add activity.");
+    } finally {
+      setSavingActivity(false);
+    }
+  };
 
   useEffect(() => {
   if (!selectedLead) return;
@@ -855,6 +922,105 @@ function AdvisorLeads() {
                 className="w-full rounded-xl border border-blue-200 p-2 text-sm outline-none"
               />
             </DetailBox>
+          </div>
+
+          {/* ── Activity Timeline ── */}
+          <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <FiClock className="text-blue-700" size={15} />
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+                Activity Timeline
+              </p>
+            </div>
+
+            {/* Add new activity */}
+            <div className="mb-4 rounded-xl border border-blue-200 bg-white p-3">
+              <div className="mb-2 flex flex-wrap gap-2">
+                {["NOTE", "CALL", "WHATSAPP", "MEETING", "STATUS_CHANGE"].map((type) => {
+                  const meta = ACTIVITY_META[type];
+                  const Icon = meta.icon;
+                  const active = newActivity.type === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setNewActivity((p) => ({ ...p, type }))}
+                      className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
+                        active
+                          ? "border-blue-400 bg-blue-50 text-blue-700"
+                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      <Icon size={13} /> {meta.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <textarea
+                value={newActivity.note}
+                onChange={(e) => setNewActivity((p) => ({ ...p, note: e.target.value }))}
+                placeholder="Add a note about this interaction (what was discussed, next steps...)"
+                rows={2}
+                className="w-full rounded-lg border border-slate-200 p-2 text-sm outline-none focus:border-blue-400"
+              />
+
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-semibold text-slate-500">Set reminder:</span>
+                  <input
+                    type="datetime-local"
+                    value={newActivity.followUp}
+                    onChange={(e) => setNewActivity((p) => ({ ...p, followUp: e.target.value }))}
+                    className="rounded-lg border border-slate-200 p-1.5 text-xs outline-none focus:border-blue-400"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddActivity}
+                  disabled={savingActivity}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                >
+                  <FiPlus size={13} /> {savingActivity ? "Adding..." : "Add Activity"}
+                </button>
+              </div>
+            </div>
+
+            {/* Timeline list */}
+            {activitiesLoading ? (
+              <p className="py-3 text-center text-sm text-slate-400">Loading history...</p>
+            ) : activities.length === 0 ? (
+              <p className="py-3 text-center text-sm text-slate-400">No activity yet. Add the first one above.</p>
+            ) : (
+              <div className="space-y-3">
+                {activities.map((act) => {
+                  const meta = ACTIVITY_META[act.activityType] || ACTIVITY_META.NOTE;
+                  const Icon = meta.icon;
+                  return (
+                    <div key={act.id} className="flex gap-3">
+                      <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${meta.color}`}>
+                        <Icon size={14} />
+                      </div>
+                      <div className="flex-1 rounded-xl border border-slate-100 bg-white px-3 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold text-slate-800">{meta.label}</span>
+                          <span className="text-[10px] text-slate-400">{formatDateTime12h(act.createdAt)}</span>
+                        </div>
+                        {act.note && <p className="mt-1 text-xs text-slate-600">{act.note}</p>}
+                        {act.template?.title && (
+                          <p className="mt-1 text-[11px] text-sky-600">Template: {act.template.title}</p>
+                        )}
+                        {act.nextFollowUpAt && (
+                          <p className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-amber-600">
+                            <FiClock size={11} /> Reminder: {formatDateTime12h(act.nextFollowUpAt)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
