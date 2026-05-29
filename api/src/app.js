@@ -78,6 +78,32 @@ app.get("/db-test", async (req, res) => {
 });
 
 /* =========================
+   REACT PAGE ROUTE FIX
+   This prevents React pages like /admin/subscriptions
+   from being treated as backend API routes.
+========================= */
+app.use((req, res, next) => {
+  const isHtmlRequest =
+    req.method === "GET" && req.headers.accept?.includes("text/html");
+
+  const frontendRoutes = [
+    "/admin",
+    "/advisor",
+    "/signup",
+  ];
+
+  const isFrontendRoute = frontendRoutes.some((route) =>
+    req.path === route || req.path.startsWith(`${route}/`)
+  );
+
+  if (isHtmlRequest && isFrontendRoute) {
+    return res.sendFile(path.join(appPath, "index.html"));
+  }
+
+  next();
+});
+
+/* =========================
    API ROUTES
 ========================= */
 app.use("/auth", authRoutes);
@@ -98,15 +124,21 @@ app.use("/subscriptions", subscriptionRoutes);
 app.use("/", chatflowRoutes);
 
 /* =========================
-   REACT FALLBACK
+   FINAL FALLBACK
 ========================= */
-app.get("/{*any}", (req, res) => {
-  if (req.accepts("html")) {
+app.use((req, res) => {
+  if (req.method === "GET" && req.headers.accept?.includes("text/html")) {
     return res.sendFile(path.join(appPath, "index.html"));
   }
 
   return res.status(404).json({
     success: false,
-    message: "API route not found",
+    message: "Route not found",
   });
+});
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
