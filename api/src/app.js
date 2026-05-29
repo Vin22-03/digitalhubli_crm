@@ -13,11 +13,12 @@ import contactRoutes from "./routes/contactRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import resourceRoutes from "./routes/resourceRoutes.js";
-import { db } from "./config/db.js";
 import chatflowRoutes from "./routes/chatflowRoutes.js";
 import workspaceRoutes from "./routes/workspaceRoutes.js";
 import planRoutes from "./routes/planRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+
+import { db } from "./config/db.js";
 
 dotenv.config();
 
@@ -26,8 +27,8 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadsPath =
-  process.env.UPLOADS_DIR || "/home/u674178439/uploads";
+const uploadsPath = process.env.UPLOADS_DIR || "/home/u674178439/uploads";
+const appPath = path.join(__dirname, "../public");
 
 const uploadFolders = [
   uploadsPath,
@@ -41,13 +42,19 @@ uploadFolders.forEach((folder) => {
     fs.mkdirSync(folder, { recursive: true });
   }
 });
-const appPath = path.join(__dirname, "../public");
 
 app.use(cors());
 app.use(express.json());
 
+/* =========================
+   STATIC FILES
+========================= */
 app.use("/uploads", express.static(uploadsPath));
+app.use(express.static(appPath));
 
+/* =========================
+   HEALTH CHECKS
+========================= */
 app.get("/api-health", (req, res) => {
   res.send("API is running 🚀");
 });
@@ -70,6 +77,9 @@ app.get("/db-test", async (req, res) => {
   }
 });
 
+/* =========================
+   API ROUTES
+========================= */
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/templates", templateRoutes);
@@ -78,15 +88,27 @@ app.use("/contacts", contactRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/profile", profileRoutes);
 app.use("/resources", resourceRoutes);
-app.use("/", chatflowRoutes);
 app.use("/workspace", workspaceRoutes);
 app.use("/api/plans", planRoutes);
 app.use("/subscriptions", subscriptionRoutes);
 
-app.use(express.static(appPath));
+/* =========================
+   PUBLIC CHATFLOW ROUTES
+========================= */
+app.use("/", chatflowRoutes);
 
-app.get("/{*any}", (req, res) => {
-  res.sendFile(path.join(appPath, "index.html"));
+/* =========================
+   REACT FALLBACK
+========================= */
+app.get("*", (req, res) => {
+  if (req.accepts("html")) {
+    return res.sendFile(path.join(appPath, "index.html"));
+  }
+
+  return res.status(404).json({
+    success: false,
+    message: "API route not found",
+  });
 });
 
 const PORT = process.env.PORT || 5000;
