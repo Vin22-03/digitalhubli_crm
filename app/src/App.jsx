@@ -43,15 +43,6 @@ function ProtectedRoute({ children, allowedRole }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Force password change — redirect to profile if flag is set
-  // (but don't redirect if already on the profile page to avoid infinite loop)
-  if (user.mustChangePassword) {
-    const profilePath = user.role === "ADMIN" ? "/admin/profile" : "/advisor/profile";
-    if (window.location.pathname !== profilePath) {
-      return <Navigate to={profilePath} replace />;
-    }
-  }
-
   return children;
 }
 

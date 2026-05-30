@@ -16,7 +16,7 @@ import AdvisorShell from "../components/AdvisorShell";
 import AdminShell from "../components/AdminShell";
 
 function ProfileContent() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const isAdmin = user?.role === "ADMIN";
 
   const [profile, setProfile] = useState(null);
@@ -173,6 +173,8 @@ if (removeBrandLogo) {
       const res = await API.post("/profile/change-password", { currentPassword: pwdForm.current, newPassword: pwdForm.new });
       setPwdMsg(res.data.message || "Password changed successfully.");
       setPwdForm({ current: "", new: "", confirm: "" });
+      // Refresh user state so mustChangePassword is cleared
+      if (refreshUser) refreshUser();
     } catch (err) {
       setPwdError(err?.response?.data?.message || "Failed to change password.");
     } finally {
@@ -205,6 +207,7 @@ if (removeBrandLogo) {
   }
 
   return (
+    <div className="space-y-6">
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[390px_minmax(0,1fr)]">
       {/* LEFT COLUMN */}
       <div className="space-y-6">
@@ -525,7 +528,8 @@ if (removeBrandLogo) {
         </div>
       </section>
 
-      {/* ── CHANGE PASSWORD ── */}
+      {/* ── CHANGE PASSWORD (admin only — advisors use forgot password from login) ── */}
+      {isAdmin && (
       <section className="rounded-[30px] border border-blue-100 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(245,249,255,0.98))] p-5 shadow-[0_18px_45px_rgba(37,99,235,0.07)] sm:p-6">
         <h3 className="mb-1 text-lg font-bold text-slate-900">Change Password</h3>
         <p className="mb-5 text-sm text-slate-500">Update your account password. You'll need your current password to make changes.</p>
@@ -560,6 +564,8 @@ if (removeBrandLogo) {
           </button>
         </div>
       </section>
+      )}
+    </div>
     </div>
   );
 }

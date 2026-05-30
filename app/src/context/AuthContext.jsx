@@ -6,18 +6,18 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await API.get("/auth/me");
-        setUser(res.data.user);
-      } catch (error) {
-        console.error("Fetch current user failed:", error);
-        localStorage.removeItem("token");
-        setUser(null);
-      }
-    };
+  const fetchUser = async () => {
+    try {
+      const res = await API.get("/auth/me");
+      setUser(res.data.user);
+    } catch (error) {
+      console.error("Fetch current user failed:", error);
+      localStorage.removeItem("token");
+      setUser(null);
+    }
+  };
 
+  useEffect(() => {
     if (localStorage.getItem("token")) {
       fetchUser();
     }
@@ -36,8 +36,11 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Re-fetch user from server (call after password change, profile update, etc.)
+  const refreshUser = () => fetchUser();
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
