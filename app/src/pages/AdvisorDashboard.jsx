@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLocation } from "react-router-dom";
 import { BRAND } from "../config/branding";
 
-const AGE_OPTIONS = Array.from({ length: 83 }, (_, i) => i + 18);
+const AGE_OPTIONS = Array.from({ length: 101 }, (_, i) => i);
 
 function formatWhatsAppText(text) {
   if (!text) return "";
