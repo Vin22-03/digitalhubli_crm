@@ -16,8 +16,13 @@ export default function Signup() {
   const [loadingCo, setLoadingCo] = useState(true);
 
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", password: "", companyIds: [],
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    companyIds: [],
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -47,20 +52,36 @@ export default function Signup() {
     }));
   };
 
+  const passwordOk =
+    form.password.length >= 8 &&
+    /[A-Z]/.test(form.password) &&
+    /[a-z]/.test(form.password) &&
+    /[0-9]/.test(form.password) &&
+    /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(form.password);
+
   const handleSubmit = async () => {
     setErrorMsg("");
+
     if (!form.name.trim()) return setErrorMsg("Full name is required.");
     if (!form.email.trim()) return setErrorMsg("Email is required.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return setErrorMsg("Please enter a valid email address.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
+      return setErrorMsg("Please enter a valid email address.");
     if (!form.phone.trim()) return setErrorMsg("Mobile number is required.");
-    if (!/^\d{10}$/.test(form.phone.trim())) return setErrorMsg("Mobile number must be exactly 10 digits.");
+    if (!/^\d{10}$/.test(form.phone.trim()))
+      return setErrorMsg("Mobile number must be exactly 10 digits.");
     if (!form.password) return setErrorMsg("Password is required.");
-    if (form.password.length < 8) return setErrorMsg("Password must be at least 8 characters.");
-    if (!/[A-Z]/.test(form.password)) return setErrorMsg("Password needs at least 1 uppercase letter.");
-    if (!/[a-z]/.test(form.password)) return setErrorMsg("Password needs at least 1 lowercase letter.");
-    if (!/[0-9]/.test(form.password)) return setErrorMsg("Password needs at least 1 number.");
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(form.password)) return setErrorMsg("Password needs at least 1 special character (!@#$%^&*).");
-    if (form.companyIds.length === 0) return setErrorMsg("Please select at least one insurance company.");
+    if (form.password.length < 8)
+      return setErrorMsg("Password must be at least 8 characters.");
+    if (!/[A-Z]/.test(form.password))
+      return setErrorMsg("Password needs at least 1 uppercase letter.");
+    if (!/[a-z]/.test(form.password))
+      return setErrorMsg("Password needs at least 1 lowercase letter.");
+    if (!/[0-9]/.test(form.password))
+      return setErrorMsg("Password needs at least 1 number.");
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(form.password))
+      return setErrorMsg("Password needs at least 1 special character (!@#$%^&*).");
+    if (form.companyIds.length === 0)
+      return setErrorMsg("Please select at least one insurance company.");
 
     try {
       setLoading(true);
@@ -82,12 +103,11 @@ export default function Signup() {
   return (
     <>
       <style>{`
-        /* ABSOLUTE ZERO SCROLL LOCK */
         html, body, #root {
           margin: 0;
           width: 100%;
           height: 100%;
-          overflow: hidden !important; 
+          overflow: hidden;
           overscroll-behavior: none;
         }
 
@@ -96,7 +116,7 @@ export default function Signup() {
         }
 
         .signup-screen {
-          height: 100svh;
+          height: 100dvh;
           width: 100%;
           overflow: hidden;
           font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -132,21 +152,25 @@ export default function Signup() {
         }
 
         .orb.one {
-          width: 380px; height: 380px;
-          left: -50px; top: -50px;
+          width: 380px;
+          height: 380px;
+          left: -50px;
+          top: -50px;
           background: rgba(37, 99, 235, 0.25);
         }
 
         .orb.two {
-          width: 440px; height: 440px;
-          right: -100px; bottom: -100px;
+          width: 440px;
+          height: 440px;
+          right: -100px;
+          bottom: -100px;
           background: rgba(14, 165, 233, 0.25);
         }
 
         .left {
           position: relative;
           z-index: 1;
-          height: 100svh;
+          height: 100dvh;
           padding: clamp(30px, 4vw, 62px);
           display: flex;
           flex-direction: column;
@@ -158,7 +182,6 @@ export default function Signup() {
           overflow: hidden;
         }
 
-        /* Group brand and hero to keep them aligned to the top */
         .left-content {
           display: flex;
           flex-direction: column;
@@ -181,12 +204,12 @@ export default function Signup() {
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 1);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
           min-width: 140px;
         }
 
         .brand-logo img {
-          height: 70px; 
+          height: 70px;
           width: auto;
           max-width: 250px;
           object-fit: contain;
@@ -214,7 +237,9 @@ export default function Signup() {
           font-weight: 950;
         }
 
-        .hero h1 span { color: #b8efff; }
+        .hero h1 span {
+          color: #b8efff;
+        }
 
         .hero p {
           margin: 20px 0 28px;
@@ -237,11 +262,13 @@ export default function Signup() {
         .right {
           position: relative;
           z-index: 10;
-          height: 100svh;
+          height: 100dvh;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: clamp(16px, 3vw, 40px);
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
         }
 
         .form-wrap {
@@ -287,7 +314,6 @@ export default function Signup() {
           font-size: 15px;
         }
 
-        /* FIXED 2-COLUMN INPUT GRID */
         .input-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
@@ -298,7 +324,7 @@ export default function Signup() {
 
         .field {
           width: 100%;
-          min-width: 0; /* CRITICAL FIX: prevents grid blowout */
+          min-width: 0;
         }
 
         .field label {
@@ -316,7 +342,7 @@ export default function Signup() {
 
         .input {
           height: 52px;
-          width: 100%; /* CRITICAL FIX: forces input to stay inside field */
+          width: 100%;
           display: flex;
           align-items: center;
           gap: 10px;
@@ -326,7 +352,7 @@ export default function Signup() {
           border: 1px solid #e2e8f0;
           box-shadow: 0 4px 12px rgba(0,0,0,0.02);
           transition: all 0.2s ease;
-          min-width: 0; /* Ensures flex container shrinks */
+          min-width: 0;
         }
 
         .input:focus-within {
@@ -334,36 +360,77 @@ export default function Signup() {
           box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
         }
 
-        .input span { font-size: 16px; opacity: 0.7; flex-shrink: 0; }
-
-        .input input {
-          flex: 1; 
-          min-width: 0; /* CRITICAL FIX: prevents text from pushing width */
-          height: 100%; 
-          border: 0; 
-          outline: 0;
-          background: transparent; 
-          color: #0f172a; 
-          font-size: 15px; 
-          font-weight: 500;
-        }
-        .input input::placeholder { color: #94a3b8; font-weight: 400; }
-
-        .eye {
-          border: 0; background: transparent; cursor: pointer;
-          font-size: 16px; opacity: 0.6; transition: 0.2s;
+        .input span {
+          font-size: 16px;
+          opacity: 0.7;
           flex-shrink: 0;
         }
 
-        /* INTERNALLY SCROLLABLE COMPANY LIST */
+        .input input {
+          flex: 1;
+          min-width: 0;
+          height: 100%;
+          border: 0;
+          outline: 0;
+          background: transparent;
+          color: #0f172a;
+          font-size: 15px;
+          font-weight: 500;
+        }
+
+        .input input::placeholder {
+          color: #94a3b8;
+          font-weight: 400;
+        }
+
+        .eye {
+          border: 0;
+          background: transparent;
+          cursor: pointer;
+          font-size: 16px;
+          opacity: 0.6;
+          transition: 0.2s;
+          flex-shrink: 0;
+        }
+
+        .password-rules {
+          margin-top: 8px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .rule-chip {
+          font-size: 11px;
+          font-weight: 600;
+          padding: 2px 8px;
+          border-radius: 99px;
+          transition: all 0.2s;
+        }
+
+        .rule-chip.ok {
+          background: #dcfce7;
+          color: #166534;
+        }
+
+        .rule-chip.bad {
+          background: #fef3c7;
+          color: #92400e;
+        }
+
         .companies-section {
           margin-bottom: 20px;
         }
-        
+
         .companies-section label {
-          display: flex; align-items: center; gap: 6px;
-          font-size: 12px; font-weight: 800; text-transform: uppercase;
-          color: #334155; margin-bottom: 8px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          font-weight: 800;
+          text-transform: uppercase;
+          color: #334155;
+          margin-bottom: 8px;
         }
 
         .companies-grid {
@@ -374,10 +441,20 @@ export default function Signup() {
           overflow-y: auto;
           padding-right: 4px;
         }
-        
-        .companies-grid::-webkit-scrollbar { width: 4px; }
-        .companies-grid::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-        .companies-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        .companies-grid::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .companies-grid::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+
+        .companies-grid::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 4px;
+        }
 
         .company-btn {
           display: flex;
@@ -394,7 +471,10 @@ export default function Signup() {
           transition: 0.2s;
         }
 
-        .company-btn:hover { border-color: #cbd5e1; background: #ffffff; }
+        .company-btn:hover {
+          border-color: #cbd5e1;
+          background: #ffffff;
+        }
 
         .company-btn.active {
           background: #eff6ff;
@@ -404,13 +484,19 @@ export default function Signup() {
         }
 
         .check-box {
-          width: 14px; height: 14px; border-radius: 4px;
+          width: 14px;
+          height: 14px;
+          border-radius: 4px;
           border: 2px solid #cbd5e1;
-          display: flex; align-items: center; justify-content: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           flex-shrink: 0;
         }
+
         .company-btn.active .check-box {
-          background: #3b82f6; border-color: #3b82f6;
+          background: #3b82f6;
+          border-color: #3b82f6;
         }
 
         .error {
@@ -442,7 +528,11 @@ export default function Signup() {
           transform: translateY(-2px);
           box-shadow: 0 15px 35px rgba(37,99,235,0.35);
         }
-        .login-btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+        .login-btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
 
         .footer-link {
           margin-top: 16px;
@@ -451,62 +541,199 @@ export default function Signup() {
           color: #64748b;
           font-weight: 500;
         }
-        .footer-link a { color: #2563eb; font-weight: 800; text-decoration: none; }
 
-        /* SUCCESS SCREEN MODAL */
+        .footer-link a {
+          color: #2563eb;
+          font-weight: 800;
+          text-decoration: none;
+        }
+
         .success-wrap {
-          display: flex; flex-direction: column; align-items: center; text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
         }
+
         .success-icon {
-          width: 72px; height: 72px; border-radius: 50%;
-          background: #ecfdf5; border: 4px solid #d1fae5;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 32px; margin-bottom: 20px;
+          width: 72px;
+          height: 72px;
+          border-radius: 50%;
+          background: #ecfdf5;
+          border: 4px solid #d1fae5;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 32px;
+          margin-bottom: 20px;
         }
-        .success-wrap h2 { margin: 0 0 12px; font-size: 32px; font-weight: 900; color: #0f172a; }
-        .success-wrap p { color: #475569; font-size: 16px; line-height: 1.5; margin: 0 0 20px; }
+
+        .success-wrap h2 {
+          margin: 0 0 12px;
+          font-size: 32px;
+          font-weight: 900;
+          color: #0f172a;
+        }
+
+        .success-wrap p {
+          color: #475569;
+          font-size: 16px;
+          line-height: 1.5;
+          margin: 0 0 20px;
+        }
+
         .success-box {
-          background: #fffbeb; border: 1px solid #fde68a; padding: 16px;
-          border-radius: 16px; color: #92400e; font-size: 14px; font-weight: 500;
-          margin-bottom: 24px; width: 100%;
+          background: #fffbeb;
+          border: 1px solid #fde68a;
+          padding: 16px;
+          border-radius: 16px;
+          color: #92400e;
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 24px;
+          width: 100%;
         }
+@media (max-width: 900px) {
+  .signup-screen {
+    grid-template-columns: 1fr;
+    height: 100dvh;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f0f7ff 0%, #dbeafe 100%);
+  }
 
-        /* --- MOBILE SAAS OPTIMIZATION --- */
-        @media (max-width: 900px) {
-          .signup-screen {
-            grid-template-columns: 1fr;
-            background: linear-gradient(135deg, #f0f7ff 0%, #dbeafe 100%);
-          }
-          .left { display: none; }
-          .right { padding: 12px; }
+  .left {
+    display: none;
+  }
 
-          .mobile-brand {
-            display: flex; justify-content: center; width: 100%;
-            margin-bottom: 16px;
+  .right {
+  height: 100dvh;
+  padding: 20px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.form-wrap {
+  width: 100%;
+  max-width: 430px;
+  margin: auto;
+  padding-top: 12px;
+  padding-bottom: 22px; /* THIS CREATES PERFECT BOTTOM SPACE */
+}
+
+  .form-wrap {
+    width: 100%;
+    max-width: 430px;
+    margin: auto;
+  }
+
+  .mobile-brand {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 18px;
+  }
+
+  .mobile-brand img {
+    background: #ffffff;
+    padding: 14px 30px;
+    border-radius: 22px;
+
+    height: 95px;          /* BIGGER LOGO */
+    max-width: 260px;
+
+    object-fit: contain;
+
+    box-shadow:
+      0 15px 40px rgba(37,99,235,0.14),
+      inset 0 1px 0 rgba(255,255,255,1);
+  }
+
+  .panel {
+    padding: 22px;
+    border-radius: 28px;
+  }
+
+  .panel h2 {
+    font-size: 30px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .eyebrow,
+  .sub {
+    text-align: center;
+  }
+
+  .sub {
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+
+  .input-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .field label {
+    font-size: 11px;
+    margin-bottom: 5px;
+  }
+
+  .input {
+    height: 48px;
+    border-radius: 15px;
+    padding: 0 14px;
+  }
+
+  .input input {
+    font-size: 14px;
+  }
+
+  .companies-grid {
+    max-height: 90px;
+  }
+
+  .company-btn {
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+
+  .login-btn {
+    height: 52px;
+    border-radius: 16px;
+    font-size: 15px;
+  }
+
+  .footer-link {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+}
+
+        @media (max-width: 380px) {
+          .panel {
+            padding: 15px;
           }
+
+          .panel h2 {
+            font-size: 23px;
+          }
+
           .mobile-brand img {
-            background: #ffffff; padding: 12px 24px; border-radius: 20px;
-            height: 60px;
-            box-shadow: 0 10px 30px rgba(37,99,235,0.1);
+            height: 48px;
           }
 
-          .panel { padding: 24px; border-radius: 28px; }
-          .panel h2 { font-size: 28px; text-align: center; margin-bottom: 4px; }
-          .eyebrow, .sub { text-align: center; }
-          .sub { margin-bottom: 16px; font-size: 14px; }
-
-          .input-grid { 
-            grid-template-columns: 1fr; 
-            gap: 10px; 
-            margin-bottom: 12px; 
+          .input {
+            height: 42px;
           }
-          .input { height: 46px; } 
-          
-          .companies-section { margin-bottom: 16px; }
-          .companies-grid { max-height: 90px; } 
-          
-          .login-btn { height: 52px; font-size: 15px; }
-          .footer-link { margin-top: 12px; font-size: 13px; }
+
+          .companies-grid {
+            max-height: 70px;
+          }
         }
       `}</style>
 
@@ -521,6 +748,7 @@ export default function Signup() {
               <div className="brand-logo">
                 <img src={logo} alt={brandName} />
               </div>
+
               <div>
                 <div className="brand-name">{brandName}</div>
                 <div className="brand-tag">{tagline}</div>
@@ -528,8 +756,13 @@ export default function Signup() {
             </div>
 
             <div className="hero">
-              <h1>Join India's top <span>advisors.</span></h1>
-              <p>Create your premium CRM account to manage leads, automate follow-ups, and track your daily selling discipline effortlessly.</p>
+              <h1>
+                Join India's top <span>advisors.</span>
+              </h1>
+              <p>
+                Create your premium CRM account to manage leads, automate
+                follow-ups, and track your daily selling discipline effortlessly.
+              </p>
             </div>
           </div>
 
@@ -542,7 +775,6 @@ export default function Signup() {
 
         <section className="right">
           <div className="form-wrap">
-            
             <div className="mobile-brand">
               <img src={logo} alt={brandName} />
             </div>
@@ -551,12 +783,29 @@ export default function Signup() {
               {success ? (
                 <div className="success-wrap">
                   <div className="success-icon">✅</div>
+
                   <h2>Account Created!</h2>
-                  <p>Your <strong>{brandName}</strong> account is ready. Complete your payment to activate your workspace.</p>
+
+                  <p>
+                    Your <strong>{brandName}</strong> account is ready. Complete
+                    your payment to activate your workspace.
+                  </p>
+
                   <div className="success-box">
-                    Our team will contact you on <strong>{form.phone}</strong> or <strong>{form.email}</strong> with next steps.
+                    Our team will contact you on <strong>{form.phone}</strong> or{" "}
+                    <strong>{form.email}</strong> with next steps.
                   </div>
-                  <Link to="/login" className="login-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+
+                  <Link
+                    to="/login"
+                    className="login-btn"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      textDecoration: "none",
+                    }}
+                  >
                     Return to Login
                   </Link>
                 </div>
@@ -564,65 +813,116 @@ export default function Signup() {
                 <>
                   <div className="eyebrow">New Advisor</div>
                   <h2>Create account</h2>
-                  <p className="sub">Register to access your dedicated CRM workspace.</p>
+                  <p className="sub">
+                    Register to access your dedicated CRM workspace.
+                  </p>
 
                   <div className="input-grid">
                     <div className="field">
                       <label>Full Name</label>
                       <div className="input">
                         <span>👤</span>
-                        <input type="text" placeholder="Your name" value={form.name} onChange={set("name")} />
+                        <input
+                          type="text"
+                          placeholder="Your name"
+                          value={form.name}
+                          onChange={set("name")}
+                        />
                       </div>
                     </div>
+
                     <div className="field">
                       <label>Email Address</label>
                       <div className="input">
                         <span>✉️</span>
-                        <input type="email" placeholder="you@example.com" value={form.email} onChange={set("email")} />
+                        <input
+                          type="email"
+                          placeholder="you@example.com"
+                          value={form.email}
+                          onChange={set("email")}
+                        />
                       </div>
                     </div>
+
                     <div className="field">
                       <label>Mobile Number</label>
                       <div className="input">
                         <span>📱</span>
-                        <input type="text" placeholder="10-digit number" value={form.phone} onChange={(e) => { const v = e.target.value.replace(/\D/g, "").slice(0, 10); setForm(f => ({...f, phone: v})); }} />
+                        <input
+                          type="text"
+                          placeholder="10-digit number"
+                          value={form.phone}
+                          onChange={(e) => {
+                            const v = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 10);
+                            setForm((f) => ({ ...f, phone: v }));
+                          }}
+                        />
                       </div>
                     </div>
+
                     <div className="field">
                       <label>Password</label>
-                      <div className="input" style={(() => {
-                        const p = form.password;
-                        if (!p) return {};
-                        const allPass = p.length >= 8 && /[A-Z]/.test(p) && /[a-z]/.test(p) && /[0-9]/.test(p) && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p);
-                        return allPass ? { borderColor: '#22c55e' } : { borderColor: '#f59e0b' };
-                      })()}>
+                      <div
+                        className="input"
+                        style={
+                          form.password
+                            ? passwordOk
+                              ? { borderColor: "#22c55e" }
+                              : { borderColor: "#f59e0b" }
+                            : {}
+                        }
+                      >
                         <span>🔒</span>
-                        <input 
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="Min. 8 chars, Aa1@" 
-                          value={form.password} 
-                          onChange={set("password")} 
-                          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Min. 8 chars, Aa1@"
+                          value={form.password}
+                          onChange={set("password")}
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleSubmit()
+                          }
                         />
-                        <button className="eye" type="button" onClick={() => setShowPassword(!showPassword)}>
+                        <button
+                          className="eye"
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
                           {showPassword ? "🙈" : "👁️"}
                         </button>
                       </div>
+
                       {form.password && (
-                        <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        <div className="password-rules">
                           {[
-                            { ok: form.password.length >= 8, label: "8+ chars" },
-                            { ok: /[A-Z]/.test(form.password), label: "Uppercase" },
-                            { ok: /[a-z]/.test(form.password), label: "Lowercase" },
-                            { ok: /[0-9]/.test(form.password), label: "Number" },
-                            { ok: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(form.password), label: "Special (!@#)" },
+                            {
+                              ok: form.password.length >= 8,
+                              label: "8+ chars",
+                            },
+                            {
+                              ok: /[A-Z]/.test(form.password),
+                              label: "Uppercase",
+                            },
+                            {
+                              ok: /[a-z]/.test(form.password),
+                              label: "Lowercase",
+                            },
+                            {
+                              ok: /[0-9]/.test(form.password),
+                              label: "Number",
+                            },
+                            {
+                              ok: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+                                form.password
+                              ),
+                              label: "Special (!@#)",
+                            },
                           ].map((r) => (
-                            <span key={r.label} style={{
-                              fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '99px',
-                              background: r.ok ? '#dcfce7' : '#fef3c7',
-                              color: r.ok ? '#166534' : '#92400e',
-                              transition: 'all 0.2s',
-                            }}>
+                            <span
+                              key={r.label}
+                              className={`rule-chip ${r.ok ? "ok" : "bad"}`}
+                            >
                               {r.ok ? "✓" : "○"} {r.label}
                             </span>
                           ))}
@@ -633,21 +933,36 @@ export default function Signup() {
 
                   <div className="companies-section">
                     <label>🏢 Select Insurance Companies</label>
+
                     {loadingCo ? (
-                      <div style={{ fontSize: '13px', color: '#64748b' }}>Loading...</div>
+                      <div style={{ fontSize: "13px", color: "#64748b" }}>
+                        Loading...
+                      </div>
                     ) : (
                       <div className="companies-grid">
                         {companies.map((c) => {
                           const selected = form.companyIds.includes(c.id);
+
                           return (
-                            <button 
-                              key={c.id} 
-                              type="button" 
+                            <button
+                              key={c.id}
+                              type="button"
                               onClick={() => toggleCompany(c.id)}
-                              className={`company-btn ${selected ? 'active' : ''}`}
+                              className={`company-btn ${
+                                selected ? "active" : ""
+                              }`}
                             >
                               <div className="check-box">
-                                {selected && <span style={{ color: 'white', fontSize: '10px' }}>✓</span>}
+                                {selected && (
+                                  <span
+                                    style={{
+                                      color: "white",
+                                      fontSize: "10px",
+                                    }}
+                                  >
+                                    ✓
+                                  </span>
+                                )}
                               </div>
                               {c.name}
                             </button>
@@ -659,7 +974,11 @@ export default function Signup() {
 
                   {errorMsg && <div className="error">{errorMsg}</div>}
 
-                  <button className="login-btn" onClick={handleSubmit} disabled={loading}>
+                  <button
+                    className="login-btn"
+                    onClick={handleSubmit}
+                    disabled={loading}
+                  >
                     {loading ? "Creating..." : "Create My Account →"}
                   </button>
 

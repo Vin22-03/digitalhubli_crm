@@ -20,6 +20,7 @@ import AdminResources from "./pages/AdminResources";
 import AdminSubscriptions from "./pages/AdminSubscriptions";
 import AdminCompanies from "./pages/AdminCompanies";
 import AdvisorResources from "./pages/AdvisorResources";
+import AdvisorSubscription from "./pages/AdvisorSubscription";
 function ProtectedRoute({ children, allowedRole }) {
   const { user } = useAuth();
 
@@ -80,6 +81,14 @@ function App() {
   element={
     <ProtectedRoute allowedRole="ADVISOR">
       <AdvisorResources />
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/advisor/subscription"
+  element={
+    <ProtectedRoute allowedRole="ADVISOR">
+      <AdvisorSubscription />
     </ProtectedRoute>
   }
 />

@@ -7,6 +7,7 @@ import {
   FiUser,
   FiPhone,
   FiBook,
+  FiCreditCard,
   FiMenu,
   FiX,
   FiLogOut,
@@ -18,6 +19,7 @@ const navItems = [
   { key: "profile", label: "Profile", path: "/advisor/profile", icon: <FiUser /> },
   { key: "contacts", label: "Contacts", path: "/advisor/contacts", icon: <FiPhone /> },
   { key: "resources", label: "Resources", path: "/advisor/resources", icon: <FiBook /> },
+  { key: "subscription", label: "Subscription", path: "/advisor/subscription", icon: <FiCreditCard /> },
 ];
 
 function AdvisorShell({ title, subtitle, activeTab = "dashboard", children }) {
