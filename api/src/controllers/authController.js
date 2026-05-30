@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
-import { sendSignupReceivedEmail } from "../config/email.js";
+import crypto from "crypto";
+import { sendSignupReceivedEmail, sendPasswordResetEmail } from "../config/email.js";
 
 // ── Password validation ──
 function validatePassword(password) {
@@ -191,7 +192,7 @@ export const login = async (req, res) => {
 };
 
 /* ─────────────────────────────────────────
-   FORGOT PASSWORD REQUEST
+   FORGOT PASSWORD — sends OTP to email
 ───────────────────────────────────────── */
 export const forgotPasswordRequest = async (req, res) => {
   try {
@@ -205,41 +206,131 @@ export const forgotPasswordRequest = async (req, res) => {
     const isEmail = trimmed.includes("@");
 
     const [userRows] = await db.query(
-      `SELECT id, phone FROM \`User\` WHERE ${isEmail ? "email = ?" : "phone = ?"} LIMIT 1`,
+      `SELECT id, name, email, phone FROM \`User\` WHERE ${isEmail ? "email = ?" : "phone = ?"} LIMIT 1`,
       [isEmail ? trimmed.toLowerCase() : trimmed]
     );
 
     // always return same message (don't leak whether account exists)
+    const safeMsg = "If the account exists, a verification code has been sent to the registered email.";
+
     if (userRows.length === 0) {
-      return res.status(200).json({
-        message: "If the account exists, the password reset request has been submitted.",
-      });
+      return res.status(200).json({ message: safeMsg });
     }
 
     const user = userRows[0];
 
-    const [pendingRows] = await db.query(
-      `SELECT id FROM PasswordResetRequest WHERE userId = ? AND status = 'PENDING' LIMIT 1`,
+    if (!user.email) {
+      return res.status(200).json({ message: safeMsg });
+    }
+
+    // Invalidate any existing pending OTPs for this user
+    await db.query(
+      `UPDATE PasswordResetRequest SET status = 'REJECTED', updatedAt = NOW()
+       WHERE userId = ? AND status = 'PENDING'`,
       [user.id]
     );
 
-    if (pendingRows.length > 0) {
-      return res.status(200).json({
-        message: "If the account exists, the password reset request has been submitted.",
-      });
-    }
+    // Generate 6-digit OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
 
     await db.query(
-      `INSERT INTO PasswordResetRequest (userId, requestedBy, status, createdAt, updatedAt)
-       VALUES (?, ?, 'PENDING', NOW(), NOW())`,
-      [user.id, user.phone]
+      `INSERT INTO PasswordResetRequest (userId, requestedBy, status, resolvedNote, createdAt, updatedAt)
+       VALUES (?, ?, 'PENDING', ?, NOW(), NOW())`,
+      [user.id, user.phone, otp]
     );
 
-    return res.status(201).json({
-      message: "Password reset request sent to admin successfully.",
-    });
+    // Send OTP email (non-blocking failure won't crash the request)
+    sendPasswordResetEmail({
+      to: user.email,
+      name: user.name,
+      otp,
+    }).catch((e) => console.error("Password reset email failed:", e));
+
+    return res.status(200).json({ message: safeMsg });
   } catch (error) {
     console.error("forgotPasswordRequest error:", error);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+/* ─────────────────────────────────────────
+   RESET PASSWORD WITH OTP
+   Validates the OTP (15-minute window), sets new password.
+───────────────────────────────────────── */
+export const resetPasswordWithOTP = async (req, res) => {
+  try {
+    const { identifier, otp, newPassword } = req.body;
+
+    if (!identifier || !otp || !newPassword) {
+      return res.status(400).json({ message: "Email/mobile, OTP, and new password are required." });
+    }
+
+    const pwError = validatePassword(newPassword);
+    if (pwError) return res.status(400).json({ message: pwError });
+
+    const trimmed = identifier.trim();
+    const isEmail = trimmed.includes("@");
+
+    const [userRows] = await db.query(
+      `SELECT id FROM \`User\` WHERE ${isEmail ? "email = ?" : "phone = ?"} LIMIT 1`,
+      [isEmail ? trimmed.toLowerCase() : trimmed]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(400).json({ message: "Invalid code or account not found." });
+    }
+
+    const userId = userRows[0].id;
+
+    // Find the PENDING OTP for this user (most recent)
+    const [otpRows] = await db.query(
+      `SELECT id, resolvedNote, createdAt FROM PasswordResetRequest
+       WHERE userId = ? AND status = 'PENDING'
+       ORDER BY createdAt DESC LIMIT 1`,
+      [userId]
+    );
+
+    if (otpRows.length === 0) {
+      return res.status(400).json({ message: "No pending reset request. Please request a new code." });
+    }
+
+    const request = otpRows[0];
+    const storedOtp = request.resolvedNote;
+    const createdAt = new Date(request.createdAt);
+    const now = new Date();
+    const minutesElapsed = (now - createdAt) / (1000 * 60);
+
+    // Check expiry (15 minutes)
+    if (minutesElapsed > 15) {
+      await db.query(
+        `UPDATE PasswordResetRequest SET status = 'REJECTED', resolvedNote = 'Expired', updatedAt = NOW() WHERE id = ?`,
+        [request.id]
+      );
+      return res.status(400).json({ message: "Code has expired. Please request a new one." });
+    }
+
+    // Check OTP match
+    if (storedOtp !== otp.trim()) {
+      return res.status(400).json({ message: "Invalid verification code." });
+    }
+
+    // OTP is valid — hash new password and update
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await db.query(
+      `UPDATE \`User\` SET password = ?, mustChangePassword = 0, updatedAt = NOW() WHERE id = ?`,
+      [hashed, userId]
+    );
+
+    // Mark request completed
+    await db.query(
+      `UPDATE PasswordResetRequest SET status = 'COMPLETED', resolvedNote = 'Self-service reset', updatedAt = NOW() WHERE id = ?`,
+      [request.id]
+    );
+
+    return res.status(200).json({ message: "Password reset successfully. You can now login." });
+  } catch (error) {
+    console.error("resetPasswordWithOTP error:", error);
     return res.status(500).json({ message: "Server error." });
   }
 };

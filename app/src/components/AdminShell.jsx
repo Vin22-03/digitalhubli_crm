@@ -14,6 +14,7 @@ import {
   FiMenu,
   FiX,
   FiLogOut,
+  FiSettings,
 } from "react-icons/fi";
 
 const navItems = [
@@ -39,6 +40,12 @@ const navItems = [
     label: "Subscriptions",
     path: "/admin/subscriptions",
     icon: <FiCreditCard />,
+  },
+  {
+    key: "profile",
+    label: "My Account",
+    path: "/admin/profile",
+    icon: <FiSettings />,
   },
 ];
 

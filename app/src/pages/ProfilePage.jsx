@@ -16,6 +16,9 @@ import AdvisorShell from "../components/AdvisorShell";
 import AdminShell from "../components/AdminShell";
 
 function ProfileContent() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,8 +27,18 @@ function ProfileContent() {
   const [removePhoto, setRemovePhoto] = useState(false);
   const [removeBrandLogo, setRemoveBrandLogo] = useState(false);
   const [error, setError] = useState("");
+
+  // Password change state
+  const [pwdForm, setPwdForm] = useState({ current: "", new: "", confirm: "" });
+  const [pwdMsg, setPwdMsg] = useState("");
+  const [pwdError, setPwdError] = useState("");
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [showPwdFields, setShowPwdFields] = useState({ current: false, new: false });
+
   const BASE_URL = import.meta.env.VITE_API_URL || "";
   const [form, setForm] = useState({
+    name: "",
+    phone: "",
     email: "",
     dob: "",
     bio: "",
@@ -49,6 +62,8 @@ function ProfileContent() {
   res.data.brandLogoUrl ? `${BASE_URL}${res.data.brandLogoUrl}` : ""
 );
       setForm({
+        name: res.data.name || "",
+        phone: res.data.phone || "",
         email: res.data.email || "",
         dob: res.data.dob ? res.data.dob.slice(0, 10) : "",
         bio: res.data.bio || "",
@@ -103,6 +118,10 @@ function ProfileContent() {
       setSaving(true);
 
       const data = new FormData();
+      if (isAdmin) {
+        data.append("name", form.name);
+        data.append("phone", form.phone);
+      }
       data.append("email", form.email);
       data.append("dob", form.dob);
       data.append("bio", form.bio);
@@ -139,6 +158,25 @@ if (removeBrandLogo) {
       alert(err?.response?.data?.message || "Failed to update profile");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPwdError("");
+    setPwdMsg("");
+    if (!pwdForm.current) return setPwdError("Current password is required.");
+    if (!pwdForm.new) return setPwdError("New password is required.");
+    if (pwdForm.new.length < 8) return setPwdError("New password must be at least 8 characters.");
+    if (pwdForm.new !== pwdForm.confirm) return setPwdError("New passwords don't match.");
+    try {
+      setPwdSaving(true);
+      const res = await API.post("/profile/change-password", { currentPassword: pwdForm.current, newPassword: pwdForm.new });
+      setPwdMsg(res.data.message || "Password changed successfully.");
+      setPwdForm({ current: "", new: "", confirm: "" });
+    } catch (err) {
+      setPwdError(err?.response?.data?.message || "Failed to change password.");
+    } finally {
+      setPwdSaving(false);
     }
   };
 
@@ -346,19 +384,29 @@ if (removeBrandLogo) {
           </div>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <Field label="Name" locked>
+            <Field label="Name" locked={!isAdmin}>
               <input
-                value={profile.name}
-                disabled
-                className="w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-slate-500 outline-none"
+                name="name"
+                value={isAdmin ? form.name : profile.name}
+                onChange={isAdmin ? handleChange : undefined}
+                disabled={!isAdmin}
+                className={isAdmin
+                  ? "w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  : "w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-slate-500 outline-none"
+                }
               />
             </Field>
 
-            <Field label="Phone Number" locked>
+            <Field label="Phone Number" locked={!isAdmin}>
               <input
-                value={profile.phone}
-                disabled
-                className="w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-slate-500 outline-none"
+                name="phone"
+                value={isAdmin ? form.phone : profile.phone}
+                onChange={isAdmin ? handleChange : undefined}
+                disabled={!isAdmin}
+                className={isAdmin
+                  ? "w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  : "w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-slate-500 outline-none"
+                }
               />
             </Field>
 
@@ -459,10 +507,12 @@ if (removeBrandLogo) {
           </div>
 
           <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              <Lock size={16} />
-              Name and phone can only be changed by admin.
-            </div>
+            {!isAdmin && (
+              <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <Lock size={16} />
+                Name and phone can only be changed by admin.
+              </div>
+            )}
 
             <button
               onClick={handleSave}
@@ -472,6 +522,42 @@ if (removeBrandLogo) {
               {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* ── CHANGE PASSWORD ── */}
+      <section className="rounded-[30px] border border-blue-100 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(245,249,255,0.98))] p-5 shadow-[0_18px_45px_rgba(37,99,235,0.07)] sm:p-6">
+        <h3 className="mb-1 text-lg font-bold text-slate-900">Change Password</h3>
+        <p className="mb-5 text-sm text-slate-500">Update your account password. You'll need your current password to make changes.</p>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Current Password</label>
+            <div className="relative">
+              <input type={showPwdFields.current ? "text" : "password"} value={pwdForm.current} onChange={(e) => setPwdForm(p => ({ ...p, current: e.target.value }))} placeholder="Enter current" className="w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 pr-10 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
+              <button type="button" onClick={() => setShowPwdFields(s => ({ ...s, current: !s.current }))} className="absolute right-3 top-1/2 -translate-y-1/2 border-0 bg-transparent text-base opacity-50 cursor-pointer">{showPwdFields.current ? "🙈" : "👁️"}</button>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">New Password</label>
+            <div className="relative">
+              <input type={showPwdFields.new ? "text" : "password"} value={pwdForm.new} onChange={(e) => setPwdForm(p => ({ ...p, new: e.target.value }))} placeholder="Min 8 chars, Aa1@" className="w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 pr-10 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
+              <button type="button" onClick={() => setShowPwdFields(s => ({ ...s, new: !s.new }))} className="absolute right-3 top-1/2 -translate-y-1/2 border-0 bg-transparent text-base opacity-50 cursor-pointer">{showPwdFields.new ? "🙈" : "👁️"}</button>
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Confirm New</label>
+            <input type="password" value={pwdForm.confirm} onChange={(e) => setPwdForm(p => ({ ...p, confirm: e.target.value }))} onKeyDown={(e) => e.key === "Enter" && handleChangePassword()} placeholder="Repeat new password" className="w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
+          </div>
+        </div>
+
+        {pwdError && <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700">{pwdError}</div>}
+        {pwdMsg && <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">{pwdMsg}</div>}
+
+        <div className="mt-4 flex justify-end">
+          <button onClick={handleChangePassword} disabled={pwdSaving} className="rounded-2xl bg-gradient-to-r from-slate-800 to-slate-700 px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.18)] transition duration-150 hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60">
+            {pwdSaving ? "Changing..." : "Change Password"}
+          </button>
         </div>
       </section>
     </div>

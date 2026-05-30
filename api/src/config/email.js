@@ -245,3 +245,31 @@ export async function sendPlanUpdatedEmail({ to, name, expiryDate, note }) {
     htmlContent: baseLayout(body),
   });
 }
+
+/* ── 5. Password Reset OTP ── */
+export async function sendPasswordResetEmail({ to, name, otp }) {
+  const body = `
+    <h2 style="margin:0 0 6px;font-size:22px;font-weight:700;color:#1e293b;">
+      Password Reset Code
+    </h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Hi <strong>${name}</strong>, we received a request to reset your <strong>${BRAND.companyName} CRM</strong> password.
+    </p>
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:16px;padding:28px;margin-bottom:24px;text-align:center;">
+      <p style="margin:0 0 8px;font-size:13px;color:#0369a1;font-weight:600;">Your verification code</p>
+      <p style="margin:0;font-size:40px;font-weight:900;color:#0f172a;letter-spacing:8px;">${otp}</p>
+      <p style="margin:12px 0 0;font-size:12px;color:#64748b;">This code expires in 15 minutes</p>
+    </div>
+    <p style="margin:0 0 12px;font-size:14px;color:#475569;line-height:1.6;">
+      Enter this code on the password reset screen to set a new password.
+    </p>
+    <p style="margin:0;font-size:13px;color:#94a3b8;text-align:center;line-height:1.6;">
+      If you didn't request this, ignore this email — your password stays unchanged.
+    </p>`;
+
+  return sendEmail({
+    to, toName: name,
+    subject: `${otp} is your ${BRAND.companyName} password reset code`,
+    htmlContent: baseLayout(body),
+  });
+}

@@ -3,6 +3,7 @@ import {
   registerAdvisor,
   login,
   forgotPasswordRequest,
+  resetPasswordWithOTP,
   getMe,
   getPublicCompanies,
 } from "../controllers/authController.js";
@@ -14,6 +15,7 @@ const router = express.Router();
 router.post("/signup",                registerAdvisor);
 router.post("/login",                 login);
 router.post("/forgot-password-request", forgotPasswordRequest);
+router.post("/reset-password",        resetPasswordWithOTP);
 router.get("/companies",              getPublicCompanies); // for signup dropdown
 
 // protected

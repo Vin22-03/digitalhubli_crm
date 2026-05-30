@@ -22,7 +22,11 @@ export default function Login() {
   const [paying, setPaying] = useState(false);
 
   const [showForgot, setShowForgot] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1 = enter email, 2 = enter OTP + new password
   const [forgotId, setForgotId] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotNewPwd, setForgotNewPwd] = useState("");
+  const [showNewPwd, setShowNewPwd] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotSuccess, setForgotSuccess] = useState("");
   const [forgotError, setForgotError] = useState("");
@@ -75,13 +79,66 @@ export default function Login() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Failed");
 
-      setForgotSuccess(data?.message || "Request sent successfully.");
-      setForgotId("");
+      setForgotSuccess("Verification code sent to your registered email.");
+      setForgotStep(2);
     } catch (err) {
       setForgotError(err.message || "Something went wrong.");
     } finally {
       setForgotLoading(false);
     }
+  };
+
+  const handleResetPassword = async () => {
+    if (!forgotOtp.trim()) {
+      setForgotError("Please enter the verification code.");
+      return;
+    }
+    if (!forgotNewPwd) {
+      setForgotError("Please enter a new password.");
+      return;
+    }
+
+    try {
+      setForgotLoading(true);
+      setForgotError("");
+      setForgotSuccess("");
+
+      const res = await fetch("/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: forgotId.trim(),
+          otp: forgotOtp.trim(),
+          newPassword: forgotNewPwd,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Failed");
+
+      setForgotSuccess(data?.message || "Password reset successfully. You can now login.");
+      setForgotStep(1);
+      setForgotId("");
+      setForgotOtp("");
+      setForgotNewPwd("");
+
+      // Auto-close modal after 2 seconds
+      setTimeout(() => setShowForgot(false), 2500);
+    } catch (err) {
+      setForgotError(err.message || "Something went wrong.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const closeForgotModal = () => {
+    setShowForgot(false);
+    setForgotStep(1);
+    setForgotId("");
+    setForgotOtp("");
+    setForgotNewPwd("");
+    setForgotError("");
+    setForgotSuccess("");
   };
 
   return (
@@ -542,6 +599,144 @@ export default function Login() {
           border: 1px solid rgba(255,255,255,0.2);
         }
 
+        .modal-head {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+
+        .modal-head h3 {
+          margin: 0 0 6px;
+          font-size: 22px;
+          font-weight: 900;
+          color: #0f172a;
+          letter-spacing: -0.03em;
+        }
+
+        .modal-head p {
+          margin: 0;
+          font-size: 14px;
+          color: #64748b;
+          line-height: 1.5;
+        }
+
+        .modal .close {
+          width: 36px;
+          height: 36px;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          background: #f8fafc;
+          color: #64748b;
+          font-size: 20px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: all 0.2s;
+        }
+
+        .modal .close:hover {
+          background: #f1f5f9;
+          color: #0f172a;
+        }
+
+        .modal-input {
+          width: 100%;
+          height: 52px;
+          padding: 0 16px;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          background: #f8fafc;
+          font-size: 15px;
+          font-weight: 500;
+          color: #0f172a;
+          outline: none;
+          transition: all 0.2s;
+          box-sizing: border-box;
+        }
+
+        .modal-input:focus {
+          border-color: #3b82f6;
+          background: #ffffff;
+          box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+        }
+
+        .modal-input::placeholder {
+          color: #94a3b8;
+          font-weight: 400;
+        }
+
+        .modal .msg {
+          margin-top: 12px;
+          padding: 10px 14px;
+          border-radius: 12px;
+          font-size: 13px;
+          font-weight: 600;
+          line-height: 1.4;
+        }
+
+        .modal .msg.error {
+          background: #fff1f2;
+          border: 1px solid #fecdd3;
+          color: #be123c;
+        }
+
+        .modal .msg.success {
+          background: #ecfdf5;
+          border: 1px solid #a7f3d0;
+          color: #065f46;
+        }
+
+        .modal-actions {
+          display: flex;
+          gap: 10px;
+          margin-top: 18px;
+        }
+
+        .modal-actions .cancel {
+          flex: 1;
+          height: 48px;
+          border: 1px solid #e2e8f0;
+          border-radius: 14px;
+          background: #ffffff;
+          color: #475569;
+          font-size: 14px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .modal-actions .cancel:hover {
+          background: #f1f5f9;
+        }
+
+        .modal-actions .send {
+          flex: 1.5;
+          height: 48px;
+          border: 0;
+          border-radius: 14px;
+          background: linear-gradient(135deg, #0ea5e9, #2563eb);
+          color: #ffffff;
+          font-size: 14px;
+          font-weight: 800;
+          cursor: pointer;
+          box-shadow: 0 6px 20px rgba(37,99,235,0.25);
+          transition: all 0.2s;
+        }
+
+        .modal-actions .send:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 10px 28px rgba(37,99,235,0.35);
+        }
+
+        .modal-actions .send:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
         /* --- MOBILE SAAS OPTIMIZATION --- */
         @media (max-width: 900px) {
           .login-screen {
@@ -693,6 +888,27 @@ export default function Login() {
 
           .login-btn {
             height: 56px;
+          }
+
+          .modal {
+            padding: 24px;
+            border-radius: 24px;
+          }
+
+          .modal-head h3 {
+            font-size: 19px;
+          }
+
+          .modal-input {
+            height: 48px;
+            border-radius: 14px;
+            font-size: 14px;
+          }
+
+          .modal-actions .cancel,
+          .modal-actions .send {
+            height: 44px;
+            font-size: 13px;
           }
         }
       `}</style>
@@ -854,41 +1070,91 @@ export default function Login() {
         </section>
       </main>
 
-      {/* Forgot Password Modal logic remains unchanged */}
+      {/* Forgot Password Modal — self-service OTP reset */}
       {showForgot && (
         <div
           className="modal-overlay"
-          onClick={(e) => e.target === e.currentTarget && setShowForgot(false)}
+          onClick={(e) => e.target === e.currentTarget && closeForgotModal()}
         >
           <div className="modal">
             <div className="modal-head">
               <div>
-                <h3>Forgot password?</h3>
-                <p>Enter your email or mobile. Admin will receive your reset request.</p>
+                <h3>{forgotStep === 1 ? "Forgot password?" : "Enter verification code"}</h3>
+                <p>
+                  {forgotStep === 1
+                    ? "Enter your email or mobile. We'll send a verification code to your registered email."
+                    : "Check your email for the 6-digit code. It expires in 15 minutes."}
+                </p>
               </div>
-              <button className="close" onClick={() => setShowForgot(false)}>×</button>
+              <button className="close" onClick={closeForgotModal}>×</button>
             </div>
 
-            <input
-              className="modal-input"
-              type="text"
-              placeholder="Email or mobile"
-              value={forgotId}
-              onChange={(e) => setForgotId(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleForgot()}
-            />
+            {forgotStep === 1 ? (
+              <>
+                <input
+                  className="modal-input"
+                  type="text"
+                  placeholder="Email or mobile"
+                  value={forgotId}
+                  onChange={(e) => setForgotId(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleForgot()}
+                />
 
-            {forgotError && <div className="msg error">{forgotError}</div>}
-            {forgotSuccess && <div className="msg success">{forgotSuccess}</div>}
+                {forgotError && <div className="msg error">{forgotError}</div>}
+                {forgotSuccess && <div className="msg success">{forgotSuccess}</div>}
 
-            <div className="modal-actions">
-              <button className="cancel" onClick={() => setShowForgot(false)}>
-                Cancel
-              </button>
-              <button className="send" onClick={handleForgot} disabled={forgotLoading}>
-                {forgotLoading ? "Sending..." : "Send Request"}
-              </button>
-            </div>
+                <div className="modal-actions">
+                  <button className="cancel" onClick={closeForgotModal}>
+                    Cancel
+                  </button>
+                  <button className="send" onClick={handleForgot} disabled={forgotLoading}>
+                    {forgotLoading ? "Sending..." : "Send Code"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <input
+                  className="modal-input"
+                  type="text"
+                  placeholder="6-digit verification code"
+                  value={forgotOtp}
+                  onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  style={{ letterSpacing: "6px", fontSize: "20px", fontWeight: 800, textAlign: "center" }}
+                />
+
+                <div style={{ position: "relative", marginTop: "10px" }}>
+                  <input
+                    className="modal-input"
+                    type={showNewPwd ? "text" : "password"}
+                    placeholder="New password (min 8 chars, Aa1@)"
+                    value={forgotNewPwd}
+                    onChange={(e) => setForgotNewPwd(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleResetPassword()}
+                    style={{ paddingRight: "48px" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPwd(!showNewPwd)}
+                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", border: 0, background: "transparent", cursor: "pointer", fontSize: "16px", opacity: 0.6 }}
+                  >
+                    {showNewPwd ? "🙈" : "👁️"}
+                  </button>
+                </div>
+
+                {forgotError && <div className="msg error">{forgotError}</div>}
+                {forgotSuccess && <div className="msg success">{forgotSuccess}</div>}
+
+                <div className="modal-actions">
+                  <button className="cancel" onClick={() => { setForgotStep(1); setForgotError(""); setForgotOtp(""); setForgotNewPwd(""); }}>
+                    ← Back
+                  </button>
+                  <button className="send" onClick={handleResetPassword} disabled={forgotLoading}>
+                    {forgotLoading ? "Resetting..." : "Reset Password"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
