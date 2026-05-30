@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { BRAND } from "../config/branding";
 import API from "../api/axios";
+import { startSubscriptionPayment } from "../lib/payment";
 import logo from "../assets/logo-ih.png";
 
 export default function Signup() {
@@ -27,6 +28,15 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [success, setSuccess] = useState(false);
+
+  // payment state (after signup succeeds)
+  const [newUserId, setNewUserId] = useState(null);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState("");
+  const [paid, setPaid] = useState(false);
+
+  // 1 company => ₹2000, 2 or more => ₹3000 (display only; server re-computes)
+  const payableAmount = form.companyIds.length >= 2 ? 3000 : 2000;
 
   useEffect(() => {
     if (user?.role === "ADMIN") navigate("/admin");
@@ -85,19 +95,36 @@ export default function Signup() {
 
     try {
       setLoading(true);
-      await API.post("/auth/signup", {
+      const res = await API.post("/auth/signup", {
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim(),
         password: form.password,
         companyIds: form.companyIds,
       });
+      setNewUserId(res.data.userId);
       setSuccess(true);
     } catch (error) {
       setErrorMsg(error?.response?.data?.message || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePayNow = () => {
+    setPayError("");
+    setPaying(true);
+    startSubscriptionPayment({
+      userId: newUserId,
+      onSuccess: () => {
+        setPaying(false);
+        setPaid(true);
+      },
+      onError: (m) => {
+        setPaying(false);
+        setPayError(m);
+      },
+    });
   };
 
   return (
@@ -433,6 +460,17 @@ export default function Signup() {
           margin-bottom: 8px;
         }
 
+        .price-hint {
+          margin: -4px 0 14px;
+          font-size: 12px;
+          font-weight: 700;
+          color: #0369a1;
+          background: #e0f2fe;
+          border: 1px solid #bae6fd;
+          border-radius: 10px;
+          padding: 8px 12px;
+        }
+
         .companies-grid {
           display: flex;
           flex-wrap: wrap;
@@ -534,6 +572,41 @@ export default function Signup() {
           cursor: not-allowed;
         }
 
+        .pay-btn {
+          width: 100%;
+          height: 56px;
+          border: 0;
+          border-radius: 18px;
+          cursor: pointer;
+          color: white;
+          font-weight: 800;
+          font-size: 16px;
+          background: linear-gradient(135deg, #22c55e, #16a34a);
+          box-shadow: 0 10px 25px rgba(34,197,94,0.28);
+          transition: all 0.2s ease;
+        }
+
+        .pay-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 15px 35px rgba(34,197,94,0.38);
+        }
+
+        .pay-btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
+
+        .link-btn {
+          margin-top: 14px;
+          background: transparent;
+          border: 0;
+          color: #2563eb;
+          font-weight: 800;
+          font-size: 14px;
+          cursor: pointer;
+          text-decoration: none;
+        }
+
         .footer-link {
           margin-top: 16px;
           text-align: center;
@@ -580,6 +653,35 @@ export default function Signup() {
           font-size: 16px;
           line-height: 1.5;
           margin: 0 0 20px;
+        }
+
+        .amount-box {
+          width: 100%;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          border-radius: 18px;
+          padding: 18px;
+          margin-bottom: 18px;
+        }
+
+        .amount-box .amt {
+          font-size: 34px;
+          font-weight: 950;
+          color: #0f172a;
+          letter-spacing: -0.03em;
+        }
+
+        .amount-box .amt small {
+          font-size: 14px;
+          font-weight: 700;
+          color: #64748b;
+        }
+
+        .amount-box .amt-note {
+          margin-top: 4px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #475569;
         }
 
         .success-box {
@@ -694,7 +796,7 @@ export default function Signup() {
   }
 
   .companies-grid {
-    max-height: 90px;
+    max-height: 140px;
   }
 
   .company-btn {
@@ -732,7 +834,7 @@ export default function Signup() {
           }
 
           .companies-grid {
-            max-height: 70px;
+            max-height: 110px;
           }
         }
       `}</style>
@@ -782,32 +884,75 @@ export default function Signup() {
             <div className="panel">
               {success ? (
                 <div className="success-wrap">
-                  <div className="success-icon">✅</div>
+                  {paid ? (
+                    <>
+                      <div className="success-icon">🎉</div>
+                      <h2>Account Activated!</h2>
+                      <p>
+                        Your payment was successful and your{" "}
+                        <strong>{brandName}</strong> workspace is now active. You
+                        can log in and start using your CRM.
+                      </p>
+                      <Link
+                        to="/login"
+                        className="login-btn"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          textDecoration: "none",
+                        }}
+                      >
+                        Go to Login →
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <div className="success-icon">✅</div>
 
-                  <h2>Account Created!</h2>
+                      <h2>Account Created!</h2>
 
-                  <p>
-                    Your <strong>{brandName}</strong> account is ready. Complete
-                    your payment to activate your workspace.
-                  </p>
+                      <p>
+                        Your <strong>{brandName}</strong> account is ready.
+                        Complete the payment below to activate your workspace
+                        instantly.
+                      </p>
 
-                  <div className="success-box">
-                    Our team will contact you on <strong>{form.phone}</strong> or{" "}
-                    <strong>{form.email}</strong> with next steps.
-                  </div>
+                      <div className="amount-box">
+                        <div className="amt">
+                          ₹{payableAmount.toLocaleString("en-IN")}{" "}
+                          <small>/ year</small>
+                        </div>
+                        <div className="amt-note">
+                          {form.companyIds.length >= 2
+                            ? "Price for 2 or more companies"
+                            : "Price for 1 company"}
+                        </div>
+                      </div>
 
-                  <Link
-                    to="/login"
-                    className="login-btn"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      textDecoration: "none",
-                    }}
-                  >
-                    Return to Login
-                  </Link>
+                      {payError && <div className="error">{payError}</div>}
+
+                      <button
+                        className="pay-btn"
+                        onClick={handlePayNow}
+                        disabled={paying}
+                      >
+                        {paying
+                          ? "Opening payment..."
+                          : `Pay ₹${payableAmount.toLocaleString("en-IN")} & Activate →`}
+                      </button>
+
+                      <div className="success-box" style={{ marginTop: 18, marginBottom: 0 }}>
+                        Having trouble paying? WhatsApp us on{" "}
+                        <strong>{BRAND.supportPhone}</strong> or call our team
+                        and we'll help you activate.
+                      </div>
+
+                      <Link to="/login" className="link-btn">
+                        I'll pay later — Return to Login
+                      </Link>
+                    </>
+                  )}
                 </div>
               ) : (
                 <>
@@ -971,6 +1116,16 @@ export default function Signup() {
                       </div>
                     )}
                   </div>
+
+                  {form.companyIds.length > 0 && (
+                    <div className="price-hint">
+                      Your plan: ₹{payableAmount.toLocaleString("en-IN")}/year
+                      {form.companyIds.length >= 2
+                        ? " (2 or more companies)"
+                        : " (1 company)"}{" "}
+                      · pay after creating your account.
+                    </div>
+                  )}
 
                   {errorMsg && <div className="error">{errorMsg}</div>}
 

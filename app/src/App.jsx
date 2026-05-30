@@ -21,6 +21,17 @@ import AdminSubscriptions from "./pages/AdminSubscriptions";
 import AdminCompanies from "./pages/AdminCompanies";
 import AdvisorResources from "./pages/AdvisorResources";
 import AdvisorSubscription from "./pages/AdvisorSubscription";
+import Pricing from "./pages/Pricing";
+import Features from "./pages/Features";
+import FAQ from "./pages/FAQ";
+import ContactUs from "./pages/ContactUs";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import RefundPolicy from "./pages/RefundPolicy";
+import CancellationPolicy from "./pages/CancellationPolicy";
+import Security from "./pages/Security";
+import AboutUs from "./pages/AboutUs";
+
 function ProtectedRoute({ children, allowedRole }) {
   const { user } = useAuth();
 
@@ -41,6 +52,17 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/features" element={<Features />} />
+      <Route path="/faq" element={<FAQ />} />
+      <Route path="/contact-us" element={<ContactUs />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+      <Route path="/refund-policy" element={<RefundPolicy />} />
+      <Route path="/cancellation-policy" element={<CancellationPolicy />} />
+      <Route path="/security" element={<Security />} />
+      <Route path="/about" element={<AboutUs />} />
 
       <Route
         path="/admin"

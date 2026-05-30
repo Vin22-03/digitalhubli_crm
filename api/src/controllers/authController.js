@@ -152,16 +152,17 @@ export const login = async (req, res) => {
 
     const user = normalizeUser(rows[0]);
 
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    if (!isPasswordMatch) {
+      return res.status(400).json({ message: "Invalid credentials." });
+    }
+
     if (!user.isActive) {
       return res.status(403).json({
         message: "Your account is not active. Please complete payment to activate.",
         pendingPayment: true,
+        userId: user.id,
       });
-    }
-
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
-    if (!isPasswordMatch) {
-      return res.status(400).json({ message: "Invalid credentials." });
     }
 
     const token = jwt.sign(

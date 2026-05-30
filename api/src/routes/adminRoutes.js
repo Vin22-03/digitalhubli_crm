@@ -16,6 +16,7 @@ import {
   updateAdvisor,
   resetAdvisorPassword,
   toggleAdvisorStatus,
+  deleteAdvisor,
 
   getPasswordResetRequests,
   completePasswordResetRequest,
@@ -59,6 +60,7 @@ router.post("/advisors", protect, adminOnly, createAdvisor);
 router.put("/advisors/:advisorId", protect, adminOnly, updateAdvisor);
 router.patch("/advisors/:advisorId/password", protect, adminOnly, resetAdvisorPassword);
 router.patch("/advisors/:advisorId/toggle", protect, adminOnly, toggleAdvisorStatus);
+router.delete("/advisors/:advisorId", protect, adminOnly, deleteAdvisor);
 
 /* =========================
    PASSWORD RESET REQUESTS

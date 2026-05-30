@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { BRAND } from "../config/branding";
 import { useNavigate, Link } from "react-router-dom";
+import { startSubscriptionPayment } from "../lib/payment";
 import logo from "../assets/logo-ih.png";
 
 export default function Login() {
@@ -17,6 +18,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [pendingPayment, setPendingPayment] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState(null);
+  const [paying, setPaying] = useState(false);
 
   const [showForgot, setShowForgot] = useState(false);
   const [forgotId, setForgotId] = useState("");
@@ -46,6 +49,7 @@ export default function Login() {
     } catch (err) {
       setErrorMsg(err?.response?.data?.message || "Login failed. Please check your details.");
       setPendingPayment(err?.response?.data?.pendingPayment === true);
+      setPendingUserId(err?.response?.data?.userId || null);
     } finally {
       setLoading(false);
     }
@@ -805,9 +809,36 @@ export default function Login() {
               {errorMsg && (
                 <div className="error">
                   {errorMsg}
-                  {pendingPayment && (
-                    <div className="pending">Account pending payment activation.</div>
-                  )}
+                </div>
+              )}
+
+              {pendingPayment && pendingUserId && (
+                <div style={{ margin: "12px 0", padding: "16px", borderRadius: "16px", background: "#eff6ff", border: "1px solid #bfdbfe", textAlign: "center" }}>
+                  <p style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>Your account needs payment activation</p>
+                  <p style={{ fontSize: "13px", color: "#475569", margin: "0 0 14px" }}>Complete the payment to start using your CRM workspace.</p>
+                  <button
+                    onClick={() => {
+                      setPaying(true);
+                      setErrorMsg("");
+                      startSubscriptionPayment({
+                        userId: pendingUserId,
+                        onSuccess: () => {
+                          setPaying(false);
+                          setPendingPayment(false);
+                          setErrorMsg("");
+                          handleLogin();
+                        },
+                        onError: (m) => {
+                          setPaying(false);
+                          setErrorMsg(m);
+                        },
+                      });
+                    }}
+                    disabled={paying}
+                    style={{ width: "100%", height: "48px", border: 0, borderRadius: "14px", cursor: "pointer", color: "#fff", fontWeight: 800, fontSize: "15px", background: "linear-gradient(135deg, #22c55e, #16a34a)", boxShadow: "0 8px 24px rgba(34,197,94,0.25)" }}
+                  >
+                    {paying ? "Opening payment..." : "Pay & Activate Account →"}
+                  </button>
                 </div>
               )}
 

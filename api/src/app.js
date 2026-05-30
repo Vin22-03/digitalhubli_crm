@@ -17,6 +17,8 @@ import chatflowRoutes from "./routes/chatflowRoutes.js";
 import workspaceRoutes from "./routes/workspaceRoutes.js";
 import planRoutes from "./routes/planRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import { razorpayWebhook } from "./controllers/paymentController.js";
 
 import { db } from "./config/db.js";
 
@@ -61,6 +63,20 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+/* =========================
+   RAZORPAY WEBHOOK
+   MUST be registered BEFORE express.json() because the
+   signature is verified against the RAW request body.
+   (Optional — only fires if you configure a webhook in the
+   Razorpay dashboard with RAZORPAY_WEBHOOK_SECRET set.)
+========================= */
+app.post(
+  "/payments/webhook",
+  express.raw({ type: "application/json" }),
+  razorpayWebhook
+);
+
 app.use(express.json());
 
 /* =========================
@@ -134,6 +150,7 @@ app.use("/resources", resourceRoutes);
 app.use("/workspace", workspaceRoutes);
 app.use("/api/plans", planRoutes);
 app.use("/subscriptions", subscriptionRoutes);
+app.use("/payments", paymentRoutes);
 
 /* =========================
    PUBLIC CHATFLOW ROUTES

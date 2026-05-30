@@ -497,3 +497,46 @@ export const getAdvisorPerformance = async (req, res) => {
 export const getAdvisorLeadsForAdmin = async (req, res) => {
   return res.status(200).json({ message: "Advisor leads view removed.", advisor: null, leads: [] });
 };
+
+/* =========================
+   DELETE ADVISOR (permanent)
+   Removes advisor and ALL related data.
+   Use with caution — this cannot be undone.
+========================= */
+export const deleteAdvisor = async (req, res) => {
+  const connection = await db.getConnection();
+  try {
+    const { advisorId } = req.params;
+    const numId = Number(advisorId);
+
+    const [[advisor]] = await connection.query(
+      "SELECT id, name, role FROM `User` WHERE id = ? LIMIT 1",
+      [numId]
+    );
+    if (!advisor || advisor.role !== "ADVISOR") {
+      return res.status(404).json({ message: "Advisor not found." });
+    }
+
+    await connection.beginTransaction();
+
+    // Delete in FK-safe order (Lead FKs don't CASCADE on delete)
+    await connection.query("DELETE FROM LeadActivity WHERE advisorId = ?", [numId]);
+    await connection.query("DELETE FROM LeadActivity WHERE leadId IN (SELECT id FROM `Lead` WHERE createdById = ? OR assignedToId = ?)", [numId, numId]);
+    await connection.query("DELETE FROM `Lead` WHERE createdById = ? OR assignedToId = ?", [numId, numId]);
+    await connection.query("DELETE FROM ContactImportBatch WHERE createdById = ?", [numId]);
+    await connection.query("DELETE FROM `Contact` WHERE createdById = ?", [numId]);
+    await connection.query("DELETE FROM AdvisorCompany WHERE advisorId = ?", [numId]);
+    await connection.query("DELETE FROM `Subscription` WHERE advisorId = ?", [numId]);
+    await connection.query("DELETE FROM PasswordResetRequest WHERE userId = ?", [numId]);
+    await connection.query("DELETE FROM `User` WHERE id = ?", [numId]);
+
+    await connection.commit();
+    return res.status(200).json({ message: `${advisor.name} deleted permanently.` });
+  } catch (err) {
+    await connection.rollback();
+    console.error("deleteAdvisor error:", err);
+    return res.status(500).json({ message: "Server error." });
+  } finally {
+    connection.release();
+  }
+};

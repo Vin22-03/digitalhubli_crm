@@ -237,6 +237,23 @@ function AdminAdvisors() {
     }
   };
 
+  const handleDeleteAdvisor = async (advisor) => {
+    const confirmed = window.confirm(
+      `Permanently delete "${advisor.name}" (${advisor.phone})?\n\nThis will remove the advisor and ALL their leads, contacts, activities, and subscription data.\n\nThis action cannot be undone.`
+    );
+    if (!confirmed) return;
+    try {
+      setErrorMsg("");
+      setSuccessMsg("");
+      await API.delete(`/admin/advisors/${advisor.id}`);
+      setSuccessMsg(`${advisor.name} deleted successfully.`);
+      await fetchInitialData();
+    } catch (error) {
+      console.error("Delete advisor failed:", error);
+      setErrorMsg(error?.response?.data?.message || "Failed to delete advisor.");
+    }
+  };
+
   const Pagination = () => {
     if (filteredAdvisors.length <= ITEMS_PER_PAGE) return null;
 
@@ -428,6 +445,13 @@ function AdminAdvisors() {
                         >
                           {advisor.isActive ? "Deactivate" : "Activate"}
                         </button>
+
+                        <button
+                          onClick={() => handleDeleteAdvisor(advisor)}
+                          className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -485,7 +509,7 @@ function AdminAdvisors() {
                 ))}
               </div>
 
-              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
                   onClick={() => openEditModal(advisor)}
                   className="rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
@@ -509,6 +533,13 @@ function AdminAdvisors() {
                   }`}
                 >
                   {advisor.isActive ? "Deactivate" : "Activate"}
+                </button>
+
+                <button
+                  onClick={() => handleDeleteAdvisor(advisor)}
+                  className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
+                >
+                  Delete
                 </button>
               </div>
             </div>

@@ -22,7 +22,7 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: "01", title: "Sign Up & Pay", desc: "Create your account and activate with ₹2,000/year. Instant access to your personal CRM workspace." },
+  { num: "01", title: "Sign Up & Pay", desc: "Create your account and activate from ₹2,000/year (₹3,000/year for 2 or more companies). Instant access to your personal CRM workspace." },
   { num: "02", title: "Select Company & Plan", desc: "Choose from LIC, TATA AIA, TATA AIG and more. Pick the insurance plan that fits your client's age and need." },
   { num: "03", title: "Generate & Send", desc: "Auto-generated WhatsApp message with professional brochure. One tap to send via WhatsApp. Save as lead automatically." },
   { num: "04", title: "Track & Follow Up", desc: "Every interaction logged. Set reminders. Never lose a client. Watch your conversion rate grow." },
@@ -159,14 +159,14 @@ export default function LandingPage() {
 
               <div className="fade-up fade-up-d3 hero-btns" style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
                 <button onClick={() => navigate("/signup")} className="land-btn land-btn-primary" style={{ fontSize: 16, padding: "16px 36px" }}>
-                  Subscribe Now — ₹2,000/year →
+                  Subscribe Now — from ₹2,000/yr →
                 </button>
                 <a href="#features" className="land-btn land-btn-white" style={{ fontSize: 16, padding: "16px 32px" }}>
                   See Features
                 </a>
               </div>
 
-              <div className="fade-up fade-up-d4" className="hero-stats" style={{ marginTop: 36, display: "flex", gap: 32, flexWrap: "wrap" }}>
+              <div className="fade-up fade-up-d4 hero-stats" style={{ marginTop: 36, display: "flex", gap: 32, flexWrap: "wrap" }}>
                 {[
                   { val: "500+", lbl: "Active Advisors" },
                   { val: "50K+", lbl: "Leads Generated" },
@@ -237,7 +237,7 @@ export default function LandingPage() {
         <div className="land-section">
           <div style={{ textAlign: "center", marginBottom: 60 }}>
             <div className="land-badge" style={{ background: "#eff6ff", color: "#2563eb", marginBottom: 16 }}>Features</div>
-            <h2 style={{ fontSize: 38, fontWeight: 800, color: "#0f172a", marginBottom: 16, className: "section-h" }}>
+            <h2 className="section-h" style={{ fontSize: 38, fontWeight: 800, color: "#0f172a", marginBottom: 16 }}>
               Everything an Insurance Advisor Needs
             </h2>
             <p style={{ fontSize: 17, color: "#64748b", maxWidth: 600, margin: "0 auto" }}>
@@ -273,7 +273,7 @@ export default function LandingPage() {
         <div className="land-section">
           <div style={{ textAlign: "center", marginBottom: 60 }}>
             <div className="land-badge" style={{ background: "#f0fdf4", color: "#16a34a", marginBottom: 16 }}>How It Works</div>
-            <h2 style={{ fontSize: 38, fontWeight: 800, color: "#0f172a", marginBottom: 16, className: "section-h" }}>
+            <h2 className="section-h" style={{ fontSize: 38, fontWeight: 800, color: "#0f172a", marginBottom: 16 }}>
               Start Selling in 4 Simple Steps
             </h2>
           </div>
@@ -302,11 +302,11 @@ export default function LandingPage() {
         <div className="land-section" style={{ position: "relative", zIndex: 1 }}>
           <div style={{ textAlign: "center", marginBottom: 50 }}>
             <div className="land-badge" style={{ background: "rgba(255,255,255,.08)", color: "#93c5fd", marginBottom: 16 }}>Pricing</div>
-            <h2 style={{ fontSize: 38, fontWeight: 800, color: "#fff", marginBottom: 16 }}>
-              One Simple Plan. Everything Included.
+            <h2 className="section-h" style={{ fontSize: 38, fontWeight: 800, color: "#fff", marginBottom: 16 }}>
+              Simple Pricing. Everything Included.
             </h2>
-            <p style={{ fontSize: 17, color: "rgba(255,255,255,.5)", maxWidth: 500, margin: "0 auto" }}>
-              No hidden fees. No per-message charges. Unlimited templates, unlimited leads.
+            <p style={{ fontSize: 17, color: "rgba(255,255,255,.5)", maxWidth: 520, margin: "0 auto" }}>
+              No hidden fees. No per-message charges. Unlimited templates, unlimited leads. Pricing depends only on how many insurance companies you sell.
             </p>
           </div>
 
@@ -320,13 +320,26 @@ export default function LandingPage() {
             <div style={{ fontSize: 13, fontWeight: 700, color: "#93c5fd", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 8 }}>
               Yearly Plan
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4, marginBottom: 8 }}>
-              <span style={{ fontSize: 18, color: "rgba(255,255,255,.5)" }}>₹</span>
-              <span style={{ fontSize: 64, fontWeight: 800, color: "#fff" }}>2,000</span>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "center", gap: 4, marginBottom: 4 }}>
+              <span style={{ fontSize: 18, color: "rgba(255,255,255,.5)" }}>from ₹</span>
+              <span className="price-num" style={{ fontSize: 64, fontWeight: 800, color: "#fff" }}>2,000</span>
               <span style={{ fontSize: 16, color: "rgba(255,255,255,.4)" }}>/year</span>
             </div>
+
+            {/* Tiered pricing row */}
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", margin: "18px 0 8px", flexWrap: "wrap" }}>
+              <div style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 14, padding: "12px 18px", minWidth: 150 }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>₹2,000<span style={{ fontSize: 13, color: "rgba(255,255,255,.4)" }}>/yr</span></div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", fontWeight: 600, marginTop: 2 }}>1 company</div>
+              </div>
+              <div style={{ background: "rgba(34,197,94,.1)", border: "1px solid rgba(34,197,94,.25)", borderRadius: 14, padding: "12px 18px", minWidth: 150 }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#fff" }}>₹3,000<span style={{ fontSize: 13, color: "rgba(255,255,255,.4)" }}>/yr</span></div>
+                <div style={{ fontSize: 12, color: "rgba(134,239,172,.9)", fontWeight: 600, marginTop: 2 }}>2 or more companies</div>
+              </div>
+            </div>
+
             <p style={{ fontSize: 14, color: "rgba(255,255,255,.4)", marginBottom: 32 }}>
-              That's just ₹5.50/day — less than a cup of chai
+              That's as little as ₹5.50/day — less than a cup of chai
             </p>
 
             <div style={{ textAlign: "left", marginBottom: 32 }}>
@@ -354,7 +367,7 @@ export default function LandingPage() {
               color: "#fff", fontSize: 17, padding: "16px 0",
               boxShadow: "0 8px 30px rgba(34,197,94,.3)",
             }}>
-              Start Now — ₹2,000/year →
+              Start Now — from ₹2,000/yr →
             </button>
 
             <p style={{ fontSize: 12, color: "rgba(255,255,255,.3)", marginTop: 14 }}>
@@ -369,7 +382,7 @@ export default function LandingPage() {
         <div className="land-section">
           <div style={{ textAlign: "center", marginBottom: 50 }}>
             <div className="land-badge" style={{ background: "#fef3c7", color: "#92400e", marginBottom: 16 }}>Testimonials</div>
-            <h2 style={{ fontSize: 38, fontWeight: 800, color: "#0f172a" }}>
+            <h2 className="section-h" style={{ fontSize: 38, fontWeight: 800, color: "#0f172a" }}>
               Advisors Love digitalhubli
             </h2>
           </div>
@@ -407,7 +420,7 @@ export default function LandingPage() {
       }}>
         <div className="glow-ring" style={{ width: 300, height: 300, background: "#60a5fa", top: -60, left: "10%" }} />
         <div className="land-section" style={{ position: "relative", zIndex: 1 }}>
-          <h2 style={{ fontSize: 36, fontWeight: 800, color: "#fff", marginBottom: 16 }}>
+          <h2 className="cta-h" style={{ fontSize: 36, fontWeight: 800, color: "#fff", marginBottom: 16 }}>
             Ready to Grow Your Insurance Business?
           </h2>
           <p style={{ fontSize: 17, color: "rgba(255,255,255,.6)", marginBottom: 32, maxWidth: 500, margin: "0 auto 32px" }}>
@@ -464,7 +477,27 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div style={{ borderTop: "1px solid rgba(255,255,255,.06)", paddingTop: 20, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+
+          <div style={{ borderTop: "1px solid rgba(255,255,255,.06)", paddingTop: 22, marginTop: 8, display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center" }}>
+            {[
+              ["Pricing", "/pricing"],
+              ["Features", "/features"],
+              ["About", "/about"],
+              ["FAQ", "/faq"],
+              ["Security", "/security"],
+              ["Contact Us", "/contact-us"],
+              ["Privacy Policy", "/privacy-policy"],
+              ["Terms & Conditions", "/terms-and-conditions"],
+              ["Refund Policy", "/refund-policy"],
+              ["Cancellation Policy", "/cancellation-policy"],
+            ].map(([label, path]) => (
+              <button key={path} onClick={() => navigate(path)} style={{ border: 0, background: "transparent", color: "rgba(255,255,255,.42)", fontSize: 13, cursor: "pointer" }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ borderTop: "1px solid rgba(255,255,255,.06)", paddingTop: 20, marginTop: 20, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
             <span style={{ fontSize: 13, color: "rgba(255,255,255,.25)" }}>© 2026 {BRAND.companyName}. All rights reserved.</span>
             <span style={{ fontSize: 13, color: "rgba(255,255,255,.25)" }}>Built with ❤️ in Hubballi, India</span>
           </div>
