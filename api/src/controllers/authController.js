@@ -1,5 +1,16 @@
 import bcrypt from "bcryptjs";
 import { sendSignupReceivedEmail } from "../config/email.js";
+
+// ── Password validation ──
+function validatePassword(password) {
+  if (!password || password.length < 8) return "Password must be at least 8 characters.";
+  if (!/[A-Z]/.test(password)) return "Password must contain at least 1 uppercase letter.";
+  if (!/[a-z]/.test(password)) return "Password must contain at least 1 lowercase letter.";
+  if (!/[0-9]/.test(password)) return "Password must contain at least 1 number.";
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) return "Password must contain at least 1 special character (!@#$%^&*).";
+  return null;
+}
+
 import jwt from "jsonwebtoken";
 import { db } from "../config/db.js";
 
@@ -21,9 +32,12 @@ export const registerAdvisor = async (req, res) => {
     // --- basic validation ---
     if (!name?.trim())     return res.status(400).json({ message: "Name is required." });
     if (!email?.trim())    return res.status(400).json({ message: "Email is required." });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return res.status(400).json({ message: "Please enter a valid email address." });
     if (!phone?.trim())    return res.status(400).json({ message: "Mobile number is required." });
-    if (!password)         return res.status(400).json({ message: "Password is required." });
-    if (password.length < 6) return res.status(400).json({ message: "Password must be at least 6 characters." });
+    if (!/^\d{10}$/.test(phone.trim())) return res.status(400).json({ message: "Mobile number must be exactly 10 digits." });
+    if (!password) return res.status(400).json({ message: "Password is required." });
+    const pwdError = validatePassword(password);
+    if (pwdError) return res.status(400).json({ message: pwdError });
     if (!Array.isArray(companyIds) || companyIds.length === 0)
       return res.status(400).json({ message: "Please select at least one company." });
 

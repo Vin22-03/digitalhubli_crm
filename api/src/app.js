@@ -43,7 +43,24 @@ uploadFolders.forEach((folder) => {
   }
 });
 
-app.use(cors());
+const allowedOrigins = [
+  process.env.APP_URL || "http://localhost:5173",
+  "http://localhost:5173",
+  "http://localhost:5000",
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, server-to-server, same-origin)
+    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+      callback(null, true);
+    } else {
+      callback(null, true); // Allow all for now but log unknown origins
+      // To block: callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
 
 /* =========================

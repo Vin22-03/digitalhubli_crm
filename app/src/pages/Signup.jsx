@@ -51,9 +51,15 @@ export default function Signup() {
     setErrorMsg("");
     if (!form.name.trim()) return setErrorMsg("Full name is required.");
     if (!form.email.trim()) return setErrorMsg("Email is required.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) return setErrorMsg("Please enter a valid email address.");
     if (!form.phone.trim()) return setErrorMsg("Mobile number is required.");
+    if (!/^\d{10}$/.test(form.phone.trim())) return setErrorMsg("Mobile number must be exactly 10 digits.");
     if (!form.password) return setErrorMsg("Password is required.");
-    if (form.password.length < 6) return setErrorMsg("Password must be at least 6 characters.");
+    if (form.password.length < 8) return setErrorMsg("Password must be at least 8 characters.");
+    if (!/[A-Z]/.test(form.password)) return setErrorMsg("Password needs at least 1 uppercase letter.");
+    if (!/[a-z]/.test(form.password)) return setErrorMsg("Password needs at least 1 lowercase letter.");
+    if (!/[0-9]/.test(form.password)) return setErrorMsg("Password needs at least 1 number.");
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(form.password)) return setErrorMsg("Password needs at least 1 special character (!@#$%^&*).");
     if (form.companyIds.length === 0) return setErrorMsg("Please select at least one insurance company.");
 
     try {
@@ -550,7 +556,7 @@ export default function Signup() {
                   <div className="success-box">
                     Our team will contact you on <strong>{form.phone}</strong> or <strong>{form.email}</strong> with next steps.
                   </div>
-                  <Link to="/" className="login-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+                  <Link to="/login" className="login-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
                     Return to Login
                   </Link>
                 </div>
@@ -579,16 +585,21 @@ export default function Signup() {
                       <label>Mobile Number</label>
                       <div className="input">
                         <span>📱</span>
-                        <input type="text" placeholder="10-digit number" value={form.phone} onChange={set("phone")} />
+                        <input type="text" placeholder="10-digit number" value={form.phone} onChange={(e) => { const v = e.target.value.replace(/\D/g, "").slice(0, 10); setForm(f => ({...f, phone: v})); }} />
                       </div>
                     </div>
                     <div className="field">
                       <label>Password</label>
-                      <div className="input">
+                      <div className="input" style={(() => {
+                        const p = form.password;
+                        if (!p) return {};
+                        const allPass = p.length >= 8 && /[A-Z]/.test(p) && /[a-z]/.test(p) && /[0-9]/.test(p) && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p);
+                        return allPass ? { borderColor: '#22c55e' } : { borderColor: '#f59e0b' };
+                      })()}>
                         <span>🔒</span>
                         <input 
                           type={showPassword ? "text" : "password"} 
-                          placeholder="Min. 6 characters" 
+                          placeholder="Min. 8 chars, Aa1@" 
                           value={form.password} 
                           onChange={set("password")} 
                           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -597,6 +608,26 @@ export default function Signup() {
                           {showPassword ? "🙈" : "👁️"}
                         </button>
                       </div>
+                      {form.password && (
+                        <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {[
+                            { ok: form.password.length >= 8, label: "8+ chars" },
+                            { ok: /[A-Z]/.test(form.password), label: "Uppercase" },
+                            { ok: /[a-z]/.test(form.password), label: "Lowercase" },
+                            { ok: /[0-9]/.test(form.password), label: "Number" },
+                            { ok: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(form.password), label: "Special (!@#)" },
+                          ].map((r) => (
+                            <span key={r.label} style={{
+                              fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '99px',
+                              background: r.ok ? '#dcfce7' : '#fef3c7',
+                              color: r.ok ? '#166534' : '#92400e',
+                              transition: 'all 0.2s',
+                            }}>
+                              {r.ok ? "✓" : "○"} {r.label}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -633,7 +664,7 @@ export default function Signup() {
                   </button>
 
                   <div className="footer-link">
-                    Already have an account? <Link to="/">Login here</Link>
+                    Already have an account? <Link to="/login">Login here</Link>
                   </div>
                 </>
               )}
